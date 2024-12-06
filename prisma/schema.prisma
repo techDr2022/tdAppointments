@@ -1,0 +1,66 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql" // Replace with your preferred database provider
+  url      = env("DATABASE_URL")
+}
+
+model Doctor {
+  id          Int          @id @default(autoincrement())
+  name        String
+  website     String       @unique
+  whatsapp    String?
+  services    Service[]    // One-to-many relation
+  timeslots   Timeslot[]   // One-to-many relation
+  appointments Appointment[] // One-to-many relation with Appointment
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+}
+
+model Patient {
+  id          Int          @id @default(autoincrement())
+  name        String
+  age         String
+  phone       String       @unique
+  appointments Appointment[] // One-to-many relation with Appointment
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+}
+
+model Appointment {
+  id          Int       @id @default(autoincrement())
+  date        DateTime
+  status      String    @default("PENDING")
+  location    String?
+  doctorId    Int
+  patientId   Int
+  serviceId   Int?
+  timeslotId  Int
+
+  doctor      Doctor    @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+  patient     Patient   @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  service     Service?   @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  timeslot    Timeslot @relation(fields: [timeslotId], references: [id])
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Service {
+  id          Int         @id @default(autoincrement())
+  name        String
+  doctorId    Int         // Foreign key to associate with Doctor
+  doctor      Doctor      @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+  appointments Appointment[] // One-to-many relation with Appointment
+}
+
+model Timeslot {
+  id          Int       @id @default(autoincrement())
+  startTime   DateTime
+  doctorId    Int       // Foreign key to Doctor
+  isAvailable Boolean   @default(true) // Default value set to true
+  doctor      Doctor    @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+  appointments Appointment[] // One-to-many relation with Appointment
+}
