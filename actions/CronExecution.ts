@@ -22,13 +22,7 @@ export async function cronJobAction(Details: AppointmentDetailsType) {
   );
 
   // Adjust the rescheduled time to UTC (-5:30 offset)
-  const rescheduledTimeUTC = rescheduledTime
-    .subtract(5, "hour")
-    .subtract(30, "minute");
-  console.log(
-    "Adjusted Rescheduled Time (UTC -5:30):",
-    rescheduledTimeUTC.format()
-  );
+  const rescheduledTimeUTC = rescheduledTime;
 
   // Generate the cron expression based on the adjusted time (in UTC)
   const cronExpression = `${rescheduledTimeUTC.minute()} ${rescheduledTimeUTC.hour()} ${rescheduledTimeUTC.date()} ${
