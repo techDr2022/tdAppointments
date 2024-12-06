@@ -352,7 +352,7 @@ const Hematologybmt = () => {
       }
     };
     fetchDoctorData();
-  }, []);
+  }, [submitted]);
   // Success popup - similar to previous implementation
   if (loading) {
     return (
