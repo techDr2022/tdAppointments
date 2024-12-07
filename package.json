@@ -12,7 +12,6 @@
   "dependencies": {
     "@hookform/resolvers": "^3.9.1",
     "@prisma/client": "^6.0.1",
-    "cors": "^2.8.5",
     "dayjs": "^1.11.13",
     "lucide-react": "^0.464.0",
     "next": "15.0.3",
@@ -20,9 +19,7 @@
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-hook-form": "^7.53.2",
-    "react-loader-spinner": "^6.1.6",
     "react-toastify": "^10.0.6",
-    "rsuite": "^5.75.0",
     "twilio": "^5.3.6",
     "zod": "^3.23.8"
   },
