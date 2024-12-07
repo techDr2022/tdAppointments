@@ -50,8 +50,6 @@ export async function findDoctorById(id: number) {
     if (!doctor) {
       return null;
     }
-
-    console.log(doctor);
     return doctor; // Return the found doctor
   } catch (error: unknown) {
     if (error instanceof Error) {

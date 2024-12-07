@@ -26,7 +26,6 @@ export async function BookedSlots(doctorId: number) {
       const trimmedTime = arr[1].slice(0, 5);
       return { dateKey: arr[0], time: trimmedTime };
     });
-    console.log(result);
     return result;
   } catch (err: unknown) {
     console.error(err);
