@@ -332,7 +332,7 @@ const Hematologybmt = () => {
       }
     } else {
       toast.error("An unexpected error occurred");
-      console.error("Service or Doctor ID  missing.");
+      console.error("Service or Doctor ID missing.");
     }
   };
 
