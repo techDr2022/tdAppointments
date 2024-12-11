@@ -162,17 +162,22 @@ const Hematologybmt = () => {
   const locationTimeSlots: { [key: string]: string[] } = {
     "Financial District": [
       "10:00",
-      "10:30",
+      "10:20",
+      "10:40",
       "11:00",
-      "11:30",
+      "11:20",
+      "11:40",
       "12:00",
-      "12:30",
+      "12:20",
+      "12:40",
       "14:00",
-      "14:30",
+      "14:20",
+      "14:40",
       "15:00",
-      "15:30",
+      "15:20",
+      "15:40",
     ],
-    Kukatpally: ["18:00", "18:30", "19:00", "19:30", "20:00", "20:15", "20:30"],
+    Kukatpally: ["18:00", "18:20", "18:40", "19:20", "19:40", "20:00"],
   };
 
   const {
@@ -199,31 +204,58 @@ const Hematologybmt = () => {
   const watchDate = watch("date");
 
   // Dynamic time slots based on location
-  const generateTimeSlots = (location: string) => {
-    if (!location) return [];
+  const generateTimeSlots = (location: string | null, date: Date | null) => {
+    if (!location || !date) return []; // Validate inputs
 
-    return locationTimeSlots[location].map((time) => {
-      const [hours, minutes] = time.split(":");
-      const date = new Date();
-      date.setHours(parseInt(hours), parseInt(minutes), 0, 0);
-      return {
-        time,
-        label: date.toLocaleTimeString([], {
-          hour: "2-digit",
-          minute: "2-digit",
-        }),
-        ampm: date.toLocaleTimeString([], {
-          hour: "2-digit",
-          minute: "2-digit",
-          hour12: true,
-        }),
-      };
-    });
+    // Convert the provided date to the Asia/Kolkata timezone
+    const selectedDate = new Date(
+      date.toLocaleString("en-US", { timeZone: "Asia/Kolkata" })
+    );
+
+    return (
+      locationTimeSlots[location]
+        ?.map((time) => {
+          const [hours, minutes] = time.split(":");
+
+          // Create a Date object for the time slot on the selected date
+          const slotDate = new Date(selectedDate);
+          slotDate.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+
+          // Get the current time in the Asia/Kolkata timezone
+          const now = new Date();
+          const currentTime = new Date(
+            now.toLocaleString("en-US", { timeZone: "Asia/Kolkata" })
+          );
+
+          // Skip past time slots for today
+          if (
+            selectedDate.toDateString() === currentTime.toDateString() &&
+            slotDate < currentTime
+          ) {
+            return null;
+          }
+
+          return {
+            time,
+            label: new Intl.DateTimeFormat("en-US", {
+              hour: "2-digit",
+              minute: "2-digit",
+              timeZone: "Asia/Kolkata",
+            }).format(slotDate),
+            ampm: new Intl.DateTimeFormat("en-US", {
+              hour: "2-digit",
+              minute: "2-digit",
+              hour12: true,
+              timeZone: "Asia/Kolkata",
+            }).format(slotDate),
+          };
+        })
+        .filter((slot) => slot !== null) || []
+    ); // Remove null values and handle undefined
   };
-
   const timeSlots = useMemo(() => {
-    return generateTimeSlots(watchLocation);
-  }, [watchLocation]);
+    return generateTimeSlots(watchLocation, watchDate);
+  }, [watchLocation, watchDate]);
 
   const isSlotBooked = (date: Date, time: string) => {
     if (!date) return false;
@@ -300,7 +332,7 @@ const Hematologybmt = () => {
   };
 
   // Calendar generation function
-  const generateCalendarDays = () => {
+  const generateCalendarDays = (location: string) => {
     const year = currentMonth.getFullYear();
     const month = currentMonth.getMonth();
     const daysInMonth = new Date(year, month + 1, 0).getDate();
@@ -320,9 +352,12 @@ const Hematologybmt = () => {
       const today = new Date();
       today.setHours(0, 0, 0, 0); // Reset the time to 00:00:00
 
-      // Check if the current date is in the past
+      // Check if the current date is in the past, is a Sunday, or is a Wednesday (only if location is Kukatpally)
       const isPastDate = date < today;
-      days.push({ day, date, disabled: isPastDate });
+      const isSunday = date.getDay() === 0;
+      const isWednesday = location === "Kukatpally" && date.getDay() === 3;
+
+      days.push({ day, date, disabled: isPastDate || isSunday || isWednesday });
     }
 
     return days;
@@ -581,7 +616,7 @@ const Hematologybmt = () => {
                   </div>
                 ))}
 
-                {generateCalendarDays().map((dayObj, index) => (
+                {generateCalendarDays(watchLocation).map((dayObj, index) => (
                   <button
                     key={index}
                     type="button"
@@ -636,13 +671,13 @@ const Hematologybmt = () => {
                       setValue("time", time, { shouldValidate: true })
                     }
                     disabled={isSlotBooked(watchDate, time)}
-                    className={`text-xs p-2 rounded-lg border 
+                    className={`text-xs p-2 rounded-lg border font-medium
             ${
               isSlotBooked(watchDate, time)
-                ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                ? "bg-red-300 text-black cursor-not-allowed"
                 : watch("time") === time
-                ? "bg-blue-600 text-white border-blue-600"
-                : "bg-white text-black border-gray-300 hover:bg-blue-200 hover:text-black"
+                ? "bg-green-800 text-white border-green-600"
+                : "bg-green-300 text-black border-gray-300 hover:bg-green-200 hover:text-black"
             }`}
                   >
                     {ampm}
