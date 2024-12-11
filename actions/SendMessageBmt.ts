@@ -73,7 +73,7 @@ export async function SendMessageBMT(Details: AppointmentDetailsType) {
     };
 
     // Send messages in parallel
-    const messageSendResult = await Promise.all([
+    await Promise.all([
       client.messages.create({
         from: `whatsapp:${whatsappFrom}`,
         to: `whatsapp:${doctor.whatsapp}`,
@@ -88,7 +88,6 @@ export async function SendMessageBMT(Details: AppointmentDetailsType) {
       }),
     ]);
 
-    console.log("Message send results:", messageSendResult);
     return true;
   } catch (err) {
     console.error(err);
@@ -135,17 +134,15 @@ export async function SendConfirmMessageBMT(Details: AppointmentDetailsType) {
     };
 
     // Send confirmation message
-    const confirmMessageResult = await client.messages.create({
+    await client.messages.create({
       from: `whatsapp:${whatsappFrom}`,
       to: `whatsapp:+91${patient.phone}`,
       contentSid: "HX2a65ac11807b442006bca2465875e179",
       contentVariables: JSON.stringify(messageVariables),
     });
 
-    console.log("Confirmation message send result:", confirmMessageResult);
-
     // Atomic transaction for updates
-    const transactionResult = await prisma.$transaction([
+    await prisma.$transaction([
       prisma.timeslot.update({
         where: { id: timeslot.id },
         data: { isAvailable: false },
@@ -155,7 +152,6 @@ export async function SendConfirmMessageBMT(Details: AppointmentDetailsType) {
         data: { status: "CONFIRMED" },
       }),
     ]);
-    console.log("Transaction update results:", transactionResult);
 
     await cronJobAction(Details);
 
