@@ -205,7 +205,9 @@ const Hematologybmt = () => {
 
   // Dynamic time slots based on location
   const generateTimeSlots = (location: string | null, date: Date | null) => {
-    if (!location || !date) return []; // Validate inputs
+    if (!location || !date) {
+      return [];
+    }
 
     // Convert the provided date to the Asia/Kolkata timezone
     const selectedDate = new Date(
@@ -235,7 +237,7 @@ const Hematologybmt = () => {
             return null;
           }
 
-          return {
+          const formattedSlot = {
             time,
             label: new Intl.DateTimeFormat("en-US", {
               hour: "2-digit",
@@ -249,10 +251,13 @@ const Hematologybmt = () => {
               timeZone: "Asia/Kolkata",
             }).format(slotDate),
           };
+
+          return formattedSlot;
         })
         .filter((slot) => slot !== null) || []
     ); // Remove null values and handle undefined
   };
+
   const timeSlots = useMemo(() => {
     return generateTimeSlots(watchLocation, watchDate);
   }, [watchLocation, watchDate]);
@@ -522,7 +527,7 @@ const Hematologybmt = () => {
                   {...field}
                   type="text"
                   placeholder="Full Name"
-                  className="w-full pl-10 pr-4 py-3 border-2 border-blue-200 rounded-lg focus:outline-none focus:border-blue-500 transition-colors"
+                  className="w-full pl-10 pr-4 py-3 border-2 border-blue-200 rounded-lg focus:outline-none focus:border-blue-500 transition-colors text-black"
                 />
                 {errors.name && (
                   <p className="text-red-500 text-xs mt-1">

@@ -10,9 +10,14 @@
     "postinstall": "prisma generate"
   },
   "dependencies": {
+    "@bull-board/api": "^6.5.3",
+    "@bull-board/express": "^6.5.3",
     "@hookform/resolvers": "^3.9.1",
     "@prisma/client": "^6.0.1",
+    "bull": "^4.16.4",
+    "bullmq": "^5.34.0",
     "dayjs": "^1.11.13",
+    "dotenv": "^16.4.7",
     "lucide-react": "^0.464.0",
     "next": "15.0.3",
     "node-cron": "^3.0.3",

@@ -1,10 +1,10 @@
 const AppointmentBookingFormSkeleton: React.FC = () => {
   return (
-    <div className="bg-white shadow-md rounded-lg max-w-md mx-auto overflow-hidden absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 px-4 sm:px-6">
-      <div className="p-6">
+    <div className="bg-white shadow-md rounded-lg max-w-lg mx-auto overflow-hidden absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 px-4 sm:px-6">
+      <div className="p-8">
         {/* Header Skeleton */}
         <div className="animate-pulse mb-6">
-          <div className="h-8 text-2Sxl md:text-3xl rounded text-blue-800 w-full">
+          <div className="h-8 text-2xl md:text-3xl rounded text-blue-800 w-full">
             Book Your Appointment
           </div>
         </div>
