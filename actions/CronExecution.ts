@@ -34,18 +34,18 @@ export async function cronJobAction(
     console.log("Received Details:", Details);
 
     // Parse the start time in IST (input is in IST)
-    const startTimeIST = dayjs(Details.timeslot.startTime); // This is in IST
+    const startTimeIST = dayjs(Details.timeslot.startTime).tz("Asia/Kolkata"); // This is in IST
     console.log("Parsed Start Time (IST):", startTimeIST.format());
 
     // Add 30 minutes to the parsed start time in IST
-    const rescheduledTime = startTimeIST.add(30, "minute");
+    const rescheduledTimeIST = startTimeIST.add(60, "minute");
     console.log(
       "Rescheduled Time (30 minutes later in IST):",
-      rescheduledTime.format()
+      rescheduledTimeIST.format()
     );
 
-    // Adjust the rescheduled time to UTC (BullMQ will handle the scheduling in UTC)
-    const rescheduledTimeUTC = rescheduledTime;
+    const rescheduledTimeUTC = rescheduledTimeIST.tz("UTC");
+    console.log("Rescheduled Time (UTC):", rescheduledTimeUTC.format());
 
     // Schedule the job to execute sendFeedbackMessageBMT with a delay
     const job = await feedbackQueue.add(
