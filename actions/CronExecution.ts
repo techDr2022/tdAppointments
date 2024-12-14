@@ -34,7 +34,7 @@ export async function cronJobAction(
     console.log("Received Details:", Details);
 
     // Parse the start time in IST (input is in IST)
-    const startTimeIST = dayjs(Details.timeslot.startTime).tz("Asia/Kolkata"); // This is in IST
+    const startTimeIST = dayjs(Details.timeslot.startTime); // This is in IST
     console.log("Parsed Start Time (IST):", startTimeIST.format());
 
     // Add 30 minutes to the parsed start time in IST
