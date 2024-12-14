@@ -246,3 +246,35 @@ export async function sendFeedbackMessageBMT(Details: AppointmentDetailsType) {
     return false;
   }
 }
+
+export async function sendReminderMessageBMT(Details: AppointmentDetailsType) {
+  try {
+    const { patient, timeslot, service } = Details;
+    const date = timeslot.startTime.toISOString().split("T");
+    const trimmedTime = date[1].slice(0, 5);
+    const [hours, minutes] = trimmedTime.split(":").map(Number);
+    const period = hours >= 12 ? "PM" : "AM";
+    const formattedHours = hours % 12 || 12; // Convert 0 to 12 for midnight
+    const formattedTime = `${formattedHours}:${minutes
+      .toString()
+      .padStart(2, "0")} ${period}`;
+    const messageVariables = {
+      1: patient.name,
+      2: service?.name,
+      3: date[0],
+      4: formattedTime,
+      5: Details.location,
+    };
+    await client.messages.create({
+      from: `whatsapp:${whatsappFrom}`,
+      to: `whatsapp:+91${Details.patient.phone}`,
+      contentSid: "HXfc6792ecdb6eb6f72a76c4c2aee5b1a6",
+      contentVariables: JSON.stringify(messageVariables),
+    });
+
+    return true;
+  } catch (err) {
+    console.error(err);
+    return false;
+  }
+}
