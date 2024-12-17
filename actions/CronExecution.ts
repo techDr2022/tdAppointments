@@ -1,3 +1,5 @@
+import * as dotenv from "dotenv";
+dotenv.config();
 import dayjs from "dayjs";
 import timezone from "dayjs/plugin/timezone";
 import { Queue, Worker, Job, WorkerOptions, ConnectionOptions } from "bullmq";
@@ -6,6 +8,10 @@ import {
   sendReminderMessageBMT,
 } from "./SendMessageBmt";
 import { AppointmentDetailsType } from "./SendMessage";
+import {
+  sendFeedbackMessageAll,
+  sendReminderMessageAll,
+} from "./ScheduleMessage";
 
 // Ensure dayjs is configured with the timezone plugin
 dayjs.extend(timezone);
@@ -39,20 +45,25 @@ export async function cronJobAction(
 ): Promise<{ message: string }> {
   try {
     // Log the received details for debugging
-    console.log("Received Details:", Details);
+    console.log("Received Details:", Details.timeslot);
 
     // Parse the start time in IST (input is in IST)
     const startTimeIST = dayjs.tz(Details.timeslot.startTime, "Asia/Kolkata");
     console.log("Parsed Start Time (IST):", startTimeIST.format());
 
     // Add 30 minutes to the parsed start time in IST
-    const rescheduledTimeIST = startTimeIST.add(60, "minute");
+    const rescheduledTimeIST = startTimeIST.add(1, "hour");
     console.log(
-      "Rescheduled Time (30 minutes later in IST):",
+      "Rescheduled Time (1 hr later in IST):",
       rescheduledTimeIST.format()
     );
 
-    const rescheduledTimeUTC = rescheduledTimeIST.tz("UTC");
+    const reframedTime = rescheduledTimeIST
+      .subtract(5, "hours")
+      .subtract(30, "minutes");
+    console.log("ReframedTime", reframedTime.format());
+
+    const rescheduledTimeUTC = reframedTime.tz("UTC");
     console.log("Rescheduled Time (UTC):", rescheduledTimeUTC.format());
 
     // Schedule the job to execute sendFeedbackMessageBMT with a delay
@@ -73,7 +84,12 @@ export async function cronJobAction(
       reminderTimeIST.format()
     );
 
-    const reminderTimeUTC = reminderTimeIST.tz("UTC");
+    const reframedReminderTime = reminderTimeIST
+      .subtract(5, "hours")
+      .subtract(30, "minutes");
+    console.log("ReframedReminderTime", reframedReminderTime);
+
+    const reminderTimeUTC = reframedReminderTime.tz("UTC");
     console.log("Reminder Time (UTC):", reminderTimeUTC.format());
 
     const reminderDelay = reminderTimeUTC.diff(dayjs(), "milliseconds");
@@ -114,12 +130,20 @@ const feedbackWorker = new Worker<JobData>(
       const { Details } = job.data;
 
       // Call the sendFeedbackMessageBMT function to send the WhatsApp message
-      const result = await sendFeedbackMessageBMT(Details);
-
-      if (result) {
-        console.log("Feedback message sent successfully.");
+      if (Details.id == 1) {
+        const result = await sendFeedbackMessageBMT(Details);
+        if (result) {
+          console.log("Feedback message sent successfully.");
+        } else {
+          console.log("Failed to send feedback message.");
+        }
       } else {
-        console.log("Failed to send feedback message.");
+        const result = await sendFeedbackMessageAll(Details);
+        if (result) {
+          console.log("Feedback message sent successfully.");
+        } else {
+          console.log("Failed to send feedback message.");
+        }
       }
     } catch (err) {
       console.error("Error processing feedback job:", err);
@@ -141,12 +165,22 @@ const reminderWorker = new Worker<JobData>(
       console.log("Sending reminder for:", Details);
 
       // Simulate sending a reminder (replace with actual implementation)
-      const result = await sendReminderMessageBMT(Details); // Replace with reminder-specific function if needed
+      if (Details.id == 1) {
+        const result = await sendReminderMessageBMT(Details); // Replace with reminder-specific function if needed
 
-      if (result) {
-        console.log("Reminder message sent successfully.");
+        if (result) {
+          console.log("Reminder message sent successfully.");
+        } else {
+          console.log("Failed to send reminder message.");
+        }
       } else {
-        console.log("Failed to send reminder message.");
+        const result = await sendReminderMessageAll(Details); // Replace with reminder-specific function if needed
+
+        if (result) {
+          console.log("Reminder message sent successfully.");
+        } else {
+          console.log("Failed to send reminder message.");
+        }
       }
     } catch (err) {
       console.error("Error processing reminder job:", err);

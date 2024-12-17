@@ -3,9 +3,15 @@ export interface Doctor {
   name: string;
   website: string;
   whatsapp?: string;
-  services: Service[];
-  timeslots: Timeslot[];
-  appointments: Appointment[];
+  sid_doctor?: string;
+  sid_Ack?: string;
+  sid_Pcf?: string;
+  sid_Pcn?: string;
+  sid_Rm?: string;
+  sid_Fd?: string;
+  services: Service[]; // One-to-many relation
+  timeslots: Timeslot[]; // One-to-many relation
+  appointments: Appointment[]; // One-to-many relation
   createdAt: Date;
   updatedAt: Date;
 }

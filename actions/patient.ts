@@ -52,6 +52,21 @@ export async function createPatient(data: {
     });
 
     if (existingPatient) {
+      if (
+        existingPatient.name !== data.name ||
+        existingPatient.age !== data.age
+      ) {
+        const UpdatePatient = await prisma.patient.update({
+          where: {
+            phone: existingPatient.phone,
+          },
+          data: {
+            name: data.name,
+            age: data.age,
+          },
+        });
+        return UpdatePatient;
+      }
       return existingPatient;
     }
 

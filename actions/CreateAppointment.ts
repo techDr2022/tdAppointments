@@ -5,7 +5,7 @@ import prisma from "@/lib/db";
 // Define the types for the function parameters
 interface CreateAppointmentParams {
   date: string;
-  location: string; // Should be a valid date string (e.g., '2024-12-04T10:00:00')
+  location?: string; // Should be a valid date string (e.g., '2024-12-04T10:00:00')
   doctorId: number;
   patientId: number;
   serviceId?: number; // Optional, because a service might not be provided

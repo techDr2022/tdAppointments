@@ -12,6 +12,12 @@ model Doctor {
   name        String
   website     String       @unique
   whatsapp    String?
+  sid_doctor  String?
+  sid_Ack     String?
+  sid_Pcf     String?
+  sid_Pcn     String?
+  sid_Rm      String?
+  sid_Fd      String?
   services    Service[]    // One-to-many relation
   timeslots   Timeslot[]   // One-to-many relation
   appointments Appointment[] // One-to-many relation with Appointment

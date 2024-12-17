@@ -1,5 +1,5 @@
 "use server";
-// import twilio from "twilio";
+import twilio from "twilio";
 import { z } from "zod"; // Recommended for input validation
 import { findAppointmentById } from "./CreateAppointment";
 import prisma from "@/lib/db";
@@ -13,7 +13,7 @@ if (!accountSid || !authToken || !whatsappFrom) {
   throw new Error("Missing required environment variables");
 }
 
-// const client = twilio(accountSid, authToken);
+const client = twilio(accountSid, authToken);
 
 // Webhook data validation schema
 const WebhookDataSchema = z.object({
@@ -27,6 +27,7 @@ import {
   SendConfirmMessageBMT,
   SendMessageBMT,
 } from "./SendMessageBmt";
+import { cronJobAction } from "./CronExecution";
 
 export type AppointmentDetailsType = {
   doctor: {
@@ -34,6 +35,12 @@ export type AppointmentDetailsType = {
     name: string;
     website: string;
     whatsapp: string | null;
+    sid_doctor?: string | null;
+    sid_Ack?: string | null;
+    sid_Pcf?: string | null;
+    sid_Pcn?: string | null;
+    sid_Rm?: string | null;
+    sid_Fd?: string | null;
   };
   patient: {
     id: number;
@@ -79,6 +86,88 @@ async function appointmentDetails(
   }
 }
 
+export async function FormatedTimeDate(startTime: Date) {
+  const date = startTime.toISOString().split("T");
+  const trimmedTime = date[1].slice(0, 5);
+  const [hours, minutes] = trimmedTime.split(":").map(Number);
+  const period = hours >= 12 ? "PM" : "AM";
+  const formattedHours = hours % 12 || 12; // Convert 0 to 12 for midnight
+  const formattedTime = `${formattedHours}:${minutes
+    .toString()
+    .padStart(2, "0")} ${period}`;
+
+  return { formattedDate: date[0], formattedTime };
+}
+
+export async function sendMessage_acknow_confirm(
+  Details: AppointmentDetailsType
+) {
+  try {
+    const { doctor, patient, timeslot } = Details;
+    console.log("Fetched entities:", {
+      doctorFound: !!doctor,
+      patientFound: !!patient,
+      timeSlotFound: !!timeslot,
+    });
+
+    if (!doctor || !patient || !timeslot) {
+      console.error("Missing required appointment details");
+      return false;
+    }
+
+    const resultTimeDate = await FormatedTimeDate(timeslot.startTime);
+    const formatedDate = resultTimeDate.formattedDate;
+    const formattedTime = resultTimeDate.formattedTime;
+    console.log("Preparing message variables:", {
+      doctorWhatsapp: doctor.whatsapp,
+      patientPhone: patient.phone,
+      serviceDate: formatedDate,
+      serviceTime: formattedTime,
+    });
+
+    // Messages for doctor
+    const appointmentIdString = Details.id.toString();
+    const doctorMessageVariables = {
+      1: doctor.name,
+      2: patient.name,
+      3: patient.age,
+      4: `${formatedDate}`,
+      5: `${formattedTime}`,
+      6: patient.phone,
+      8: appointmentIdString,
+      9: appointmentIdString,
+    };
+
+    // Messages for patient
+    const patientMessageVariables = {
+      1: patient.name,
+      2: patient.name,
+      3: `${formatedDate}`,
+      4: `${formattedTime}`,
+    };
+
+    // Send messages in parallel
+    await Promise.all([
+      client.messages.create({
+        from: `whatsapp:${whatsappFrom}`,
+        to: `whatsapp:${doctor.whatsapp}`,
+        contentSid: `${doctor.sid_doctor}`,
+        contentVariables: JSON.stringify(doctorMessageVariables),
+      }),
+      client.messages.create({
+        from: `whatsapp:${whatsappFrom}`,
+        to: `whatsapp:+91${patient.phone}`,
+        contentSid: `${doctor.sid_Ack}`,
+        contentVariables: JSON.stringify(patientMessageVariables),
+      }),
+    ]);
+
+    return true;
+  } catch (err) {
+    console.error(err);
+    return false;
+  }
+}
 export async function sendMessage(appointment: Appointment) {
   try {
     console.log(`Sending message for appointment ID: ${appointment.id}`);
@@ -88,10 +177,71 @@ export async function sendMessage(appointment: Appointment) {
       if (appointment.doctorId == 1) {
         const result = SendMessageBMT(Details);
         return result;
+      } else {
+        const result = await sendMessage_acknow_confirm(Details);
+        return result;
       }
     }
   } catch (err) {
     console.error("Error in sendMessage:", err);
+    return false;
+  }
+}
+
+export async function SendConfirmMessageAll(Details: AppointmentDetailsType) {
+  try {
+    const { doctor, patient, timeslot } = Details;
+    if (!doctor || !patient || !timeslot) {
+      console.error("Missing required appointment details for confirmation", {
+        doctorFound: !!doctor,
+        patientFound: !!patient,
+        timeSlotFound: !!timeslot,
+      });
+      return false;
+    }
+
+    const resultTimeDate = await FormatedTimeDate(timeslot.startTime);
+    const formatedDate = resultTimeDate.formattedDate;
+    const formattedTime = resultTimeDate.formattedTime;
+
+    console.log("Confirmation message details:", {
+      patientName: patient.name,
+      appointmentDate: formatedDate,
+      appointmentTime: formattedTime,
+      location: Details.location,
+    });
+
+    const messageVariables = {
+      1: patient.name,
+      2: `${formatedDate}`,
+      3: `${formattedTime}`,
+    };
+
+    // Send confirmation message
+    await client.messages.create({
+      from: `whatsapp:${whatsappFrom}`,
+      to: `whatsapp:+91${patient.phone}`,
+      contentSid: `${doctor.sid_Pcf}`,
+      contentVariables: JSON.stringify(messageVariables),
+    });
+
+    // Atomic transaction for updates
+    await prisma.$transaction([
+      prisma.timeslot.update({
+        where: { id: timeslot.id },
+        data: { isAvailable: false },
+      }),
+      prisma.appointment.update({
+        where: { id: Details.id },
+        data: { status: "CONFIRMED" },
+      }),
+    ]);
+
+    await cronJobAction(Details);
+
+    return true;
+  } catch (err) {
+    console.error(err);
     return false;
   }
 }
@@ -107,6 +257,9 @@ async function sendConfirmMessage(appointment: Appointment) {
       if (Details.doctor.id == 1) {
         const result = await SendConfirmMessageBMT(Details);
         return result;
+      } else {
+        const result = await SendConfirmMessageAll(Details);
+        return result;
       }
     }
   } catch (error) {
@@ -115,6 +268,65 @@ async function sendConfirmMessage(appointment: Appointment) {
   }
 }
 
+export async function SendCancelMessageAll(Details: AppointmentDetailsType) {
+  try {
+    const { patient, timeslot, doctor } = Details;
+    if (!patient || !timeslot || !doctor) {
+      console.error("Missing required appointment details for cancellation", {
+        patientFound: !!patient,
+        timeSlotFound: !!timeslot,
+        doctorFound: !!doctor,
+      });
+      return false;
+    }
+    const resultTimeDate = await FormatedTimeDate(timeslot.startTime);
+    const formatedDate = resultTimeDate.formattedDate;
+    const formattedTime = resultTimeDate.formattedTime;
+
+    console.log("Cancellation message details:", {
+      patientName: patient.name,
+      appointmentDate: formatedDate,
+      appointmentTime: formattedTime,
+    });
+
+    const messageVariables = {
+      1: patient.name,
+      2: formatedDate,
+      3: formattedTime,
+    };
+
+    // Send cancellation message
+    const cancelMessageResult = await client.messages.create({
+      from: `whatsapp:${whatsappFrom}`,
+      to: `whatsapp:+91${patient.phone}`,
+      contentSid: `${doctor.sid_Pcn}`,
+      contentVariables: JSON.stringify(messageVariables),
+    });
+
+    console.log("Cancellation message send result:", cancelMessageResult);
+
+    // Update appointment status
+    const updateResult = await prisma.appointment.update({
+      where: { id: Details.id },
+      data: { status: "CANCELLED" },
+    });
+
+    const UpdateTimeSlot = await prisma.timeslot.update({
+      where: {
+        id: timeslot.id,
+      },
+      data: {
+        isAvailable: false,
+      },
+    });
+    console.log("Appointment status update result:", updateResult);
+    console.log("timeSlot update", UpdateTimeSlot);
+    return true;
+  } catch (err) {
+    console.error(err);
+    return false;
+  }
+}
 async function sendCancelMessage(appointment: Appointment) {
   try {
     console.log(
@@ -126,7 +338,12 @@ async function sendCancelMessage(appointment: Appointment) {
       if (Details.doctor.id == 1) {
         const result = await SendCancelMessageBMT(Details);
         return result;
+      } else {
+        const result = await SendCancelMessageAll(Details);
+        return result;
       }
+    } else {
+      return false;
     }
   } catch (error) {
     console.error("Error sending cancellation message:", error);
@@ -142,7 +359,7 @@ export async function Webhook(data: unknown) {
     const validatedData = WebhookDataSchema.safeParse(data);
 
     if (!validatedData.success) {
-      console.error("Invalid webhook data", validatedData.error);
+      console.log("Invalid webhook data");
       return false;
     }
 
