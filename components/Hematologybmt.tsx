@@ -660,7 +660,7 @@ const Hematologybmt = () => {
             }`}
             disabled={isSubmitting}
           >
-            {isSubmitting ? "Booking..." : "Book Appointment"}
+            {isSubmitting ? "✔️ Booking..." : "Book Appointment"}
           </button>
         </form>
       </div>
