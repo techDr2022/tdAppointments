@@ -15,14 +15,10 @@ import {
   Stethoscope,
   Cake,
 } from "lucide-react";
-import { findDoctorById } from "@/actions/Doctor";
-import { createPatient, findPatientByPhone } from "@/actions/patient";
-import { CreateTimeSlot } from "@/actions/CreateTimeslot";
-import { CreateAppointment } from "@/actions/CreateAppointment";
 import { BookedSlots } from "@/actions/BookSlots";
-import { sendMessage } from "@/actions/SendMessage";
 import AppointmentBookingFormSkeleton from "./AppointmentBookingFormSkeleton";
 import Image from "next/image";
+import { SubmitHandlerBMT } from "@/actions/SubmitHandlers";
 
 // Define schema for form validation
 const AppointmentSchema = z.object({
@@ -88,43 +84,7 @@ const AppointmentSchema = z.object({
   time: z.string({ required_error: "Please select a time slot" }),
 });
 
-// Type for form data
-interface DoctorTypes {
-  id: number;
-  name: string;
-  website: string;
-  whatsapp?: string | null; // Optional, allows null
-  services?: ServiceTypes[]; // Optional
-  timeslots?: TimeslotTypes[]; // Optional
-  appointments: AppointmentTypes[]; // Required field, cannot be missing
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-interface ServiceTypes {
-  name: string;
-  id: number;
-  doctorId: number;
-}
-
-interface TimeslotTypes {
-  id: number;
-  doctorId: number;
-  isAvailable: boolean;
-  startTime: Date;
-  serviceId: number;
-}
-
-interface AppointmentTypes {
-  id: number;
-  date: Date;
-  status: string;
-  doctorId: number;
-  patientId: number;
-  serviceId: number;
-}
-
-interface AppointmentFormData {
+export interface BMTAppointmentFormData {
   name: string;
   age: string;
   whatsapp: string;
@@ -145,7 +105,6 @@ const Hematologybmt = () => {
   const [loading, setLoading] = useState(true);
   const [submitted, setSubmitted] = useState(false);
   const [currentMonth, setCurrentMonth] = useState(new Date());
-  const [doctor, setDoctor] = useState<DoctorTypes | null>(null);
 
   // Location and service configurations
   const locationOptions = [
@@ -187,7 +146,7 @@ const Hematologybmt = () => {
     setValue,
     reset,
     formState: { errors, isSubmitting },
-  } = useForm<AppointmentFormData>({
+  } = useForm<BMTAppointmentFormData>({
     resolver: zodResolver(AppointmentSchema),
     defaultValues: {
       name: "",
@@ -204,6 +163,46 @@ const Hematologybmt = () => {
   const watchDate = watch("date");
 
   // Dynamic time slots based on location
+
+  const Services = [
+    "Other",
+    "Immunotherapy",
+    "CAR T- Cells",
+    "Half Matched Transplant BMT",
+    "Allogeneic BMT",
+    "Unrelated BMT",
+    "Autologous BMT",
+    "Erdheim Chester Disease",
+    "VEXAS Syndrome",
+    "Porphyrias",
+    "Hemochromatosis",
+    "LCH",
+    "Hemophagocytic Syndrome (HLH)",
+    "Storage Disorders",
+    "Immunodeficiency",
+    "IgG4-RD",
+    "Platelets & WBC",
+    "Unexplained high or low Hb",
+    "ALPS",
+    "Multiple Sclerosis",
+    "Recurrent Abortions",
+    "Recurrent Infections",
+    "Bleeding and Clotting disorders",
+    "DVT",
+    "Sickle Cell Anemia",
+    "Thalassemia",
+    "ITP, TTP, FNAIT, AIHA, PNH",
+    "Aplastic Anemia",
+    "Pancytopenia",
+    "MGUS",
+    "Mastocytosis",
+    "Myelofibrosis",
+    "Blood Cancer",
+    "MDS",
+    "Myeloma",
+    "Lymphoma",
+    "Leukemia",
+  ];
   const generateTimeSlots = (location: string | null, date: Date | null) => {
     if (!location || !date) {
       return [];
@@ -278,61 +277,18 @@ const Hematologybmt = () => {
     );
   };
 
-  const onSubmit: SubmitHandler<AppointmentFormData> = async (data) => {
-    if (!data.date) return false;
+  const onSubmit: SubmitHandler<BMTAppointmentFormData> = async (data) => {
+    try {
+      const result = await SubmitHandlerBMT(data); // Call the server-side handler
 
-    const date = new Date(data.date);
-
-    // Use local date methods to get year, month, and day
-    const normalizedDate = new Date(
-      date.getFullYear(),
-      date.getMonth(),
-      date.getDate()
-    );
-
-    // Format the date as YYYY-MM-DD using local date methods
-    const dateKey = normalizedDate.toLocaleDateString("en-CA"); // 'en-CA' gives YYYY-MM-DD format
-
-    let patient = await findPatientByPhone(data.whatsapp);
-    if (!patient) {
-      patient = await createPatient({
-        name: data.name,
-        age: data.age,
-        phone: data.whatsapp,
-      });
-    }
-    const service = doctor?.services?.find(
-      (service) => service.name === data.service
-    );
-    if (service?.id && doctor?.id) {
-      // Ensure the dateKey and data.time are valid
-      if (dateKey && data.time) {
-        const timeSlot = await CreateTimeSlot({
-          date: dateKey, // Date in 'YYYY-MM-DD'
-          time: data.time, // Time in 'HH:mm'
-          doctorid: doctor.id, // Doctor ID
-        });
-        const appointment = await CreateAppointment({
-          date: dateKey,
-          location: data.location,
-          timeslotId: timeSlot.id,
-          serviceId: service.id,
-          doctorId: doctor.id,
-          patientId: patient.id,
-        });
-        const result = await sendMessage(appointment);
-        if (result) {
-          setSubmitted(true);
-        } else {
-          toast.error("An unexpected error occurred");
-        }
+      if (result?.success) {
+        setSubmitted(true); // Mark form as submitted
       } else {
-        toast.error("An unexpected error occurred");
-        console.error("Invalid date or time provided.");
+        toast.error("An unexpected error occurred."); // Error notification
       }
-    } else {
-      toast.error("An unexpected error occurred");
-      console.error("Service or Doctor ID missing.");
+    } catch (err) {
+      console.error("Error during form submission:", err); // Log error for debugging
+      toast.error("Something went wrong. Please try again."); // Generic error message
     }
   };
 
@@ -367,13 +323,11 @@ const Hematologybmt = () => {
 
     return days;
   };
-
   useEffect(() => {
     const fetchDoctorData = async () => {
-      const DoctorDetails = await findDoctorById(1);
-      setDoctor(DoctorDetails as DoctorTypes | null);
+      //   // const DoctorDetails = await findDoctorById(1);
+      //   // setDoctor(DoctorDetails as DoctorTypes | null);
       const slotKeys = await BookedSlots(1);
-
       if (slotKeys && slotKeys.length > 0) {
         const updatedAppointments: BookedAppointments = slotKeys.reduce(
           (acc, data) => {
@@ -382,14 +336,13 @@ const Hematologybmt = () => {
           },
           {} as BookedAppointments
         ); // Type assertion to specify the type
-
         // Merge the current appointments with the new updates
         setBookedAppointments((prev) => ({
           ...prev,
           ...updatedAppointments,
         }));
-        setLoading(false);
       }
+      setLoading(false);
     };
     fetchDoctorData();
   }, [submitted]);
@@ -502,9 +455,9 @@ const Hematologybmt = () => {
                   className="w-full pl-10 pr-4 py-3 border-2 border-blue-200 rounded-lg focus:outline-none focus:border-blue-500 transition-colors text-black"
                 >
                   <option value="">Select Service</option>
-                  {doctor?.services?.map((service) => (
-                    <option key={service.name} value={service.name}>
-                      {service.name}
+                  {Services.map((service) => (
+                    <option key={service} value={service}>
+                      {service}
                     </option>
                   ))}
                 </select>
@@ -627,7 +580,9 @@ const Hematologybmt = () => {
                     type="button"
                     onClick={() => {
                       if (dayObj && !dayObj.disabled) {
-                        setValue("date", dayObj.date, { shouldValidate: true });
+                        setValue("date", dayObj.date, {
+                          shouldValidate: true,
+                        });
                         setValue("time", "", { shouldValidate: true });
                       }
                     }}

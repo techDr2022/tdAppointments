@@ -13,14 +13,10 @@ import {
   ChevronRight,
   Cake,
 } from "lucide-react";
-import { findDoctorById } from "@/actions/Doctor";
-import { createPatient } from "@/actions/patient";
-import { CreateTimeSlot } from "@/actions/CreateTimeslot";
-import { CreateAppointment } from "@/actions/CreateAppointment";
 import { BookedSlots } from "@/actions/BookSlots";
-import { sendMessage } from "@/actions/SendMessage";
 import AppointmentBookingFormSkeleton from "./AppointmentBookingFormSkeleton";
 import Image from "next/image";
+import { SubmitHandlerAll } from "@/actions/SubmitHandlers";
 
 // Define schema for form validation
 const AppointmentSchema = z.object({
@@ -39,43 +35,7 @@ const AppointmentSchema = z.object({
   time: z.string({ required_error: "Please select a time slot" }),
 });
 
-// Type definitions (kept the same as in the original code)
-interface DoctorTypes {
-  id: number;
-  name: string;
-  website: string;
-  whatsapp?: string | null;
-  services?: ServiceTypes[];
-  timeslots?: TimeslotTypes[];
-  appointments: AppointmentTypes[];
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-interface ServiceTypes {
-  name: string;
-  id: number;
-  doctorId: number;
-}
-
-interface TimeslotTypes {
-  id: number;
-  doctorId: number;
-  isAvailable: boolean;
-  startTime: Date;
-  serviceId: number;
-}
-
-interface AppointmentTypes {
-  id: number;
-  date: Date;
-  status: string;
-  doctorId: number;
-  patientId: number;
-  serviceId: number;
-}
-
-interface AppointmentFormData {
+export interface AllAppointmentFormData {
   name: string;
   age: string;
   whatsapp: string;
@@ -94,7 +54,6 @@ const DrAvaniReddy = () => {
   const [loading, setLoading] = useState(true);
   const [submitted, setSubmitted] = useState(false);
   const [currentMonth, setCurrentMonth] = useState(new Date());
-  const [doctor, setDoctor] = useState<DoctorTypes | null>(null);
   const {
     control,
     handleSubmit,
@@ -102,7 +61,7 @@ const DrAvaniReddy = () => {
     setValue,
     reset,
     formState: { errors, isSubmitting },
-  } = useForm<AppointmentFormData>({
+  } = useForm<AllAppointmentFormData>({
     resolver: zodResolver(AppointmentSchema),
     defaultValues: {
       name: "",
@@ -181,50 +140,18 @@ const DrAvaniReddy = () => {
   const timeSlots = useMemo(() => {
     return generateTimeSlots(watchDate);
   }, [watchDate]);
-  const onSubmit: SubmitHandler<AppointmentFormData> = async (data) => {
+  const onSubmit: SubmitHandler<AllAppointmentFormData> = async (data) => {
     try {
-      if (!data.date || !doctor) {
-        toast.error("Please select a valid date and doctor");
-        return;
-      }
+      const result = await SubmitHandlerAll(data, 4); // Call the server-side handler
 
-      const date = new Date(data.date);
-      const normalizedDate = new Date(
-        date.getFullYear(),
-        date.getMonth(),
-        date.getDate()
-      );
-      const dateKey = normalizedDate.toLocaleDateString("en-CA");
-
-      const patient = await createPatient({
-        name: data.name,
-        age: data.age,
-        phone: data.whatsapp,
-      });
-
-      const timeSlot = await CreateTimeSlot({
-        date: dateKey,
-        time: data.time,
-        doctorid: doctor.id,
-      });
-
-      const appointment = await CreateAppointment({
-        date: dateKey,
-        timeslotId: timeSlot.id,
-        doctorId: doctor.id,
-        patientId: patient.id,
-      });
-
-      const result = await sendMessage(appointment);
-
-      if (result) {
-        setSubmitted(true);
+      if (result?.success) {
+        setSubmitted(true); // Mark form as submitted
       } else {
-        toast.error("Failed to send confirmation message");
+        toast.error("An unexpected error occurred."); // Error notification
       }
-    } catch (error) {
-      console.error("Appointment booking error:", error);
-      toast.error("An unexpected error occurred during booking");
+    } catch (err) {
+      console.error("Error during form submission:", err); // Log error for debugging
+      toast.error("Something went wrong. Please try again."); // Generic error message
     }
   };
   // Calendar generation function
@@ -275,8 +202,6 @@ const DrAvaniReddy = () => {
   };
   useEffect(() => {
     const fetchDoctorData = async () => {
-      const DoctorDetails = await findDoctorById(4);
-      setDoctor(DoctorDetails as DoctorTypes | null);
       const slotKeys = await BookedSlots(4);
 
       if (slotKeys && slotKeys.length > 0) {

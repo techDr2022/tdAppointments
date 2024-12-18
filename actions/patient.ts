@@ -1,5 +1,3 @@
-"use server";
-
 import prisma from "@/lib/db"; // Import Prisma client
 
 // Server action to find a patient by their phone number
