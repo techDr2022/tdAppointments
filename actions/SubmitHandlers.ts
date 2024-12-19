@@ -30,8 +30,12 @@ export async function SubmitHandlerBMT(data: BMTAppointmentFormData) {
       appointmentDate.getMonth(),
       appointmentDate.getDate()
     );
-    const dateKey = normalizedDate.toLocaleDateString("en-CA"); // YYYY-MM-DD format
+    const dateKey = normalizedDate.toLocaleDateString("en-CA", {
+      timeZone: "Asia/Kolkata",
+    });
 
+    console.log("dataKey", dateKey);
+    console.log("data.date", data.date);
     // Find or create the patient
     let patient = await findPatientByPhone(data.whatsapp);
     if (!patient) {
@@ -104,9 +108,8 @@ export async function SubmitHandlerAll(
       date.getMonth(),
       date.getDate()
     );
-    const dateKey = normalizedDate.toLocaleDateString("en-CA", {
-      timeZone: "Asia/Kolkata",
-    });
+
+    const dateKey = normalizedDate.toLocaleDateString("en-CA");
 
     console.log("dataKey", dateKey);
     console.log("data.date", data.date);
