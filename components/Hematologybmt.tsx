@@ -342,7 +342,7 @@ const Hematologybmt = () => {
         disabled: isPastDate || isSunday || isWednesday,
       });
     }
-
+    console.log(days);
     return days;
   };
 
