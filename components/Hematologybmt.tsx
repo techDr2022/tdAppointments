@@ -295,6 +295,14 @@ const Hematologybmt = () => {
 
   // Calendar generation function
   const generateCalendarDays = (location: string) => {
+    const indianTimezone = "Asia/Kolkata";
+
+    // Get the current date in Indian timezone
+    const currentDate = new Date();
+    const currentMonth = new Date(
+      currentDate.toLocaleString("en-US", { timeZone: indianTimezone })
+    );
+
     const year = currentMonth.getFullYear();
     const month = currentMonth.getMonth();
     const daysInMonth = new Date(year, month + 1, 0).getDate();
@@ -309,21 +317,35 @@ const Hematologybmt = () => {
 
     // Add the actual days of the month
     for (let day = 1; day <= daysInMonth; day++) {
+      // Create a date for the specific day
       const date = new Date(year, month, day);
-      // Create a Date object for today with the time set to midnight
-      const today = new Date();
+
+      // Adjust the date for Indian timezone
+      const dateInIST = new Date(
+        date.toLocaleString("en-US", { timeZone: indianTimezone })
+      );
+
+      // Create a Date object for today with the time set to midnight in IST
+      const today = new Date(
+        currentDate.toLocaleString("en-US", { timeZone: indianTimezone })
+      );
       today.setHours(0, 0, 0, 0); // Reset the time to 00:00:00
 
       // Check if the current date is in the past, is a Sunday, or is a Wednesday (only if location is Kukatpally)
-      const isPastDate = date < today;
-      const isSunday = date.getDay() === 0;
-      const isWednesday = location === "Kukatpally" && date.getDay() === 3;
+      const isPastDate = dateInIST < today;
+      const isSunday = dateInIST.getDay() === 0;
+      const isWednesday = location === "Kukatpally" && dateInIST.getDay() === 3;
 
-      days.push({ day, date, disabled: isPastDate || isSunday || isWednesday });
+      days.push({
+        day,
+        date: dateInIST,
+        disabled: isPastDate || isSunday || isWednesday,
+      });
     }
 
     return days;
   };
+
   useEffect(() => {
     const fetchDoctorData = async () => {
       //   // const DoctorDetails = await findDoctorById(1);
