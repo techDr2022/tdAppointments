@@ -122,6 +122,8 @@ export async function SubmitHandlerAll(
       doctorid: doctor.id,
     });
 
+    console.log("TimeSlot:", timeSlot);
+
     const appointment = await CreateAppointment({
       date: dateKey,
       timeslotId: timeSlot.id,
