@@ -104,7 +104,9 @@ export async function SubmitHandlerAll(
       date.getMonth(),
       date.getDate()
     );
-    const dateKey = normalizedDate.toLocaleDateString("en-CA");
+    const dateKey = normalizedDate.toLocaleDateString("en-CA", {
+      timeZone: "Asia/Kolkata",
+    });
 
     console.log("dataKey", dateKey);
     console.log("data.date", data.date);
