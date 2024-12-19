@@ -298,13 +298,13 @@ const Hematologybmt = () => {
     const indianTimezone = "Asia/Kolkata";
 
     // Get the current date in Indian timezone
-    const currentDate = new Date();
-    const currentMonth = new Date(
-      currentDate.toLocaleString("en-US", { timeZone: indianTimezone })
+    const currentDateUTC = new Date();
+    const currentDateIST = new Date(
+      currentDateUTC.toLocaleString("en-US", { timeZone: indianTimezone })
     );
 
-    const year = currentMonth.getFullYear();
-    const month = currentMonth.getMonth();
+    const year = currentDateIST.getFullYear();
+    const month = currentDateIST.getMonth();
     const daysInMonth = new Date(year, month + 1, 0).getDate();
     const firstDayOfMonth = new Date(year, month, 1).getDay();
 
@@ -318,27 +318,27 @@ const Hematologybmt = () => {
     // Add the actual days of the month
     for (let day = 1; day <= daysInMonth; day++) {
       // Create a date for the specific day
-      const date = new Date(year, month, day);
+      const dateUTC = new Date(year, month, day);
 
-      // Adjust the date for Indian timezone
-      const dateInIST = new Date(
-        date.toLocaleString("en-US", { timeZone: indianTimezone })
+      // Convert the date to Indian timezone
+      const dateIST = new Date(
+        dateUTC.toLocaleString("en-US", { timeZone: indianTimezone })
       );
 
-      // Create a Date object for today with the time set to midnight in IST
-      const today = new Date(
-        currentDate.toLocaleString("en-US", { timeZone: indianTimezone })
+      // Create a Date object for today in IST
+      const todayIST = new Date(
+        currentDateUTC.toLocaleString("en-US", { timeZone: indianTimezone })
       );
-      today.setHours(0, 0, 0, 0); // Reset the time to 00:00:00
+      todayIST.setHours(0, 0, 0, 0); // Reset the time to 00:00:00
 
       // Check if the current date is in the past, is a Sunday, or is a Wednesday (only if location is Kukatpally)
-      const isPastDate = dateInIST < today;
-      const isSunday = dateInIST.getDay() === 0;
-      const isWednesday = location === "Kukatpally" && dateInIST.getDay() === 3;
+      const isPastDate = dateIST < todayIST;
+      const isSunday = dateIST.getDay() === 0;
+      const isWednesday = location === "Kukatpally" && dateIST.getDay() === 3;
 
       days.push({
         day,
-        date: dateInIST,
+        date: dateIST,
         disabled: isPastDate || isSunday || isWednesday,
       });
     }
