@@ -106,6 +106,8 @@ export async function SubmitHandlerAll(
     );
     const dateKey = normalizedDate.toLocaleDateString("en-CA");
 
+    console.log("dataKey", dateKey);
+    console.log("data.date", data.date);
     const patient = await createPatient({
       name: data.name,
       age: data.age,

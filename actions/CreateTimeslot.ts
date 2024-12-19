@@ -27,7 +27,6 @@ export async function CreateTimeSlot({
         doctorId: doctorid, // Assuming you have a doctorId field in the timeslot table
       },
     });
-
     if (timeSlot) {
       console.log("Time slot already exists");
       return timeSlot;

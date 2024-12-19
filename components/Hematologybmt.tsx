@@ -272,6 +272,7 @@ const Hematologybmt = () => {
 
     // Format the date as YYYY-MM-DD using local date methods
     const dateKey = normalizedDate.toLocaleDateString("en-CA");
+    console.log(bookedAppointments);
     return (
       bookedAppointments[dateKey] && bookedAppointments[dateKey].includes(time)
     );
