@@ -25,12 +25,16 @@ export async function SubmitHandlerBMT(data: BMTAppointmentFormData) {
 
     // Normalize and format the date
     const appointmentDate = new Date(data.date);
+    // Adjust for Indian timezone (UTC+5:30)
+    const indianTimeOffset = 5.5 * 60 * 60 * 1000; // IST in milliseconds
     const normalizedDate = new Date(
-      appointmentDate.getFullYear(),
-      appointmentDate.getMonth(),
-      appointmentDate.getDate()
+      appointmentDate.getTime() + indianTimeOffset
     );
-    const dateKey = normalizedDate.toLocaleDateString("en-CA");
+
+    // Get the normalized date in Indian timezone
+    const dateKey = normalizedDate.toLocaleDateString("en-CA", {
+      timeZone: "Asia/Kolkata",
+    });
 
     console.log("dataKey", dateKey);
     console.log("data.date", data.date);
