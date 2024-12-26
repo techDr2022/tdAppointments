@@ -50,9 +50,13 @@ interface BookedAppointments {
 const DrForms = ({
   doctorid,
   imageSrc,
+  starting,
+  ending,
 }: {
   doctorid: number;
   imageSrc: string;
+  starting?:number,
+  ending?:number
 }) => {
   const [bookedAppointments, setBookedAppointments] = useState<{
     [date: string]: string[];
@@ -91,8 +95,8 @@ const DrForms = ({
     );
 
     // Define the start and end times in hours (24-hour format)
-    const startHour = 10; // 10:00 AM
-    const endHour = 21; // 9:00 PM
+    const startHour = starting? starting : 10; // 10:00 AM
+    const endHour = ending ? ending: 21; // 9:00 PM
 
     // Generate an array of time slots
     const timeSlots = [];
