@@ -55,8 +55,8 @@ const DrForms = ({
 }: {
   doctorid: number;
   imageSrc: string;
-  starting?:number,
-  ending?:number
+  starting: string;
+  ending: string;
 }) => {
   const [bookedAppointments, setBookedAppointments] = useState<{
     [date: string]: string[];
@@ -94,16 +94,20 @@ const DrForms = ({
       date.toLocaleString("en-US", { timeZone: "Asia/Kolkata" })
     );
 
-    // Define the start and end times in hours (24-hour format)
-    const startHour = starting? starting : 10; // 10:00 AM
-    const endHour = ending ? ending: 21; // 9:00 PM
+    // Parse the starting and ending times
+    const [startHour, startMinute] = starting.split(":").map(Number);
+    const [endHour, endMinute] = ending.split(":").map(Number);
 
     // Generate an array of time slots
     const timeSlots = [];
     for (let hour = startHour; hour <= endHour; hour++) {
-      for (let minute = 0; minute < 60; minute += 30) {
-        // Stop generating slots beyond the end hour
-        if (hour === endHour && minute > 0) break;
+      for (
+        let minute = hour === startHour ? startMinute : 0;
+        minute < 60;
+        minute += 30
+      ) {
+        // Stop generating slots beyond the end hour and minute
+        if (hour === endHour && minute > endMinute) break;
 
         const slotDate = new Date(selectedDate);
         slotDate.setHours(hour, minute, 0, 0);
@@ -250,7 +254,7 @@ const DrForms = ({
   if (submitted) {
     const submittedData = watch();
     return (
-      <div className="fixed inset-0 bg-gradient-to-br from-blue-200 to-blue-400 flex flex-col md:flex-row  md:items-center md:justify-center z-50 p-4">
+      <div className="fixed inset-0 bg-gradient-to-br from-blue-200 to-blue-400 flex flex-col md:flex-row  md:items-center md:justify-center z-50 p-4 gap-4">
         <Image
           src={imageSrc}
           alt="Doctor logo"
@@ -289,7 +293,7 @@ const DrForms = ({
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-100 to-blue-300 flex flex-col md:flex-row md:items-center md:justify-center p-4 gap-2">
+    <div className="min-h-screen bg-gradient-to-br from-blue-100 to-blue-300 flex flex-col md:flex-row md:items-center md:justify-center p-4 gap-5">
       <ToastContainer />
       <Image
         src={imageSrc} // Path to your image in the public folder
