@@ -316,7 +316,7 @@ export async function SendCancelMessageAll(Details: AppointmentDetailsType) {
         id: timeslot.id,
       },
       data: {
-        isAvailable: false,
+        isAvailable: true,
       },
     });
     console.log("Appointment status update result:", updateResult);
