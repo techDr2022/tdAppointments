@@ -18,13 +18,14 @@ export async function sendFeedbackMessageAll(Details: AppointmentDetailsType) {
     const messageVariables = {
       1: Details.patient.name,
     };
+    if(Details.doctor.sid_Fd){
     await client.messages.create({
       from: `whatsapp:${whatsappFrom}`,
       to: `whatsapp:+91${Details.patient.phone}`,
       contentSid: `${Details.doctor.sid_Fd}`,
       contentVariables: JSON.stringify(messageVariables),
     });
-
+  }
     return true;
   } catch (err) {
     console.error(err);
