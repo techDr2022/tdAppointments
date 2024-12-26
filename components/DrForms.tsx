@@ -47,7 +47,13 @@ interface BookedAppointments {
   [date: string]: string[];
 }
 
-const DrAvaniReddy = () => {
+const DrForms = ({
+  doctorid,
+  imageSrc,
+}: {
+  doctorid: number;
+  imageSrc: string;
+}) => {
   const [bookedAppointments, setBookedAppointments] = useState<{
     [date: string]: string[];
   }>({});
@@ -142,7 +148,7 @@ const DrAvaniReddy = () => {
   }, [watchDate]);
   const onSubmit: SubmitHandler<AllAppointmentFormData> = async (data) => {
     try {
-      const result = await SubmitHandlerAll(data, 4); // Call the server-side handler
+      const result = await SubmitHandlerAll(data, doctorid); // Call the server-side handler
 
       if (result?.success) {
         setSubmitted(true); // Mark form as submitted
@@ -202,7 +208,7 @@ const DrAvaniReddy = () => {
   };
   useEffect(() => {
     const fetchDoctorData = async () => {
-      const slotKeys = await BookedSlots(4);
+      const slotKeys = await BookedSlots(doctorid);
 
       if (slotKeys && slotKeys.length > 0) {
         const updatedAppointments: BookedAppointments = slotKeys.reduce(
@@ -242,8 +248,8 @@ const DrAvaniReddy = () => {
     return (
       <div className="fixed inset-0 bg-gradient-to-br from-blue-200 to-blue-400 flex flex-col md:flex-row  md:items-center md:justify-center z-50 p-4">
         <Image
-          src="/Dr-Avani-Reddy-Logo.webp" // Path to your image in the public folder
-          alt="Dr.Avani Reddy"
+          src={imageSrc}
+          alt="Doctor logo"
           width={500} // Specify the width of the image
           height={300} // Specify the height of the image
         />
@@ -282,8 +288,8 @@ const DrAvaniReddy = () => {
     <div className="min-h-screen bg-gradient-to-br from-blue-100 to-blue-300 flex flex-col md:flex-row md:items-center md:justify-center p-4 gap-2">
       <ToastContainer />
       <Image
-        src="/Dr-Avani-Reddy-Logo.webp" // Path to your image in the public folder
-        alt="Dr.Avani Reddy"
+        src={imageSrc} // Path to your image in the public folder
+        alt="Doctor logo"
         width={500} // Specify the width of the image
         height={300} // Specify the height of the image
       />
@@ -489,4 +495,4 @@ const DrAvaniReddy = () => {
     </div>
   );
 };
-export default DrAvaniReddy;
+export default DrForms;

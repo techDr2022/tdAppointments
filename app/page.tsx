@@ -3,18 +3,20 @@ import { Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import AppointmentBookingFormSkeleton from "@/components/AppointmentBookingFormSkeleton";
 import Hematologybmt from "@/components/Hematologybmt";
-import DrAvaniReddy from "@/components/DrAvaniReddy";
+import DrForms from "@/components/DrForms";
 
 const BookingPageContent = () => {
   const searchParams = useSearchParams();
-  const doctorId = searchParams.get("doctor");
+  const doctor = searchParams.get("doctor");
 
   const renderDoctorComponent = () => {
-    switch (doctorId) {
+    switch (doctor) {
       case "Dr.S.K.Gupta":
         return <Hematologybmt />;
       case "Dr.AvaniReddy":
-        return <DrAvaniReddy />;
+        return <DrForms doctorid={4} imageSrc="/Dr-Avani-Reddy-Logo.webp" />;
+      case "Dr.AmanChandra":
+        return <DrForms doctorid={8} imageSrc="/dr.aman-logo.webp" />;
       default:
         return <AppointmentBookingFormSkeleton />;
     }

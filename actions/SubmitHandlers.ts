@@ -6,7 +6,7 @@ import { CreateTimeSlot } from "./CreateTimeslot";
 import { createPatient, findPatientByPhone } from "./patient";
 import { findDoctorById } from "./Doctor";
 import { sendMessage } from "./SendMessage";
-import { AllAppointmentFormData } from "@/components/DrAvaniReddy";
+import { AllAppointmentFormData } from "@/components/DrForms";
 
 export async function SubmitHandlerBMT(data: BMTAppointmentFormData) {
   try {
