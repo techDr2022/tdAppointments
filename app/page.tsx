@@ -49,6 +49,15 @@ const BookingPageContent = () => {
             ending="20:30"
           />
         );
+      case "OreneClinic":
+        return (
+          <DrForms
+            doctorid={12}
+            imageSrc="/orene-logo.webp"
+            starting="10:00"
+            ending="17:00"
+          />
+        );
       default:
         return <AppointmentBookingFormSkeleton />;
     }
