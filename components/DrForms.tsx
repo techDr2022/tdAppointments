@@ -182,16 +182,18 @@ const DrForms = ({
       days.push(null);
     }
 
+    // Create a Date object for today with the time set to midnight
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
     // Add the actual days of the month
     for (let day = 1; day <= daysInMonth; day++) {
       const date = new Date(year, month, day);
-      // Create a Date object for today with the time set to midnight
-      const today = new Date();
-      today.setHours(0, 0, 0, 0); // Reset the time to 00:00:00
+      date.setHours(0, 0, 0, 0); // Reset time to midnight for accurate comparison
 
       // Check if the current date is in the past or is a Sunday
-      const isPastDate = date < today;
-      const isSunday = date.getDay() === 0; // Check if it's Sunday
+      const isPastDate = date.getTime() < today.getTime(); // Use getTime() for accurate comparison
+      const isSunday = date.getDay() === 0;
 
       days.push({ day, date, disabled: isPastDate || isSunday });
     }

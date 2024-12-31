@@ -298,12 +298,9 @@ const Hematologybmt = () => {
 
     // Get the current date in Indian timezone
     const currentDateUTC = new Date();
-    const currentDateIST = new Date(
-      currentDateUTC.toLocaleString("en-US", { timeZone: indianTimezone })
-    );
-
-    const year = currentDateIST.getFullYear();
-    const month = currentDateIST.getMonth();
+    // Use currentMonth instead of current date for generating calendar
+    const year = currentMonth.getFullYear();
+    const month = currentMonth.getMonth();
     const daysInMonth = new Date(year, month + 1, 0).getDate();
     const firstDayOfMonth = new Date(year, month, 1).getDay();
 
@@ -324,14 +321,15 @@ const Hematologybmt = () => {
         dateUTC.toLocaleString("en-US", { timeZone: indianTimezone })
       );
 
-      // Create a Date object for today in IST
+      // Create a Date object for today in IST and reset time
       const todayIST = new Date(
         currentDateUTC.toLocaleString("en-US", { timeZone: indianTimezone })
       );
-      todayIST.setHours(0, 0, 0, 0); // Reset the time to 00:00:00
+      todayIST.setHours(0, 0, 0, 0);
+      dateIST.setHours(0, 0, 0, 0);
 
       // Check if the current date is in the past, is a Sunday, or is a Wednesday (only if location is Kukatpally)
-      const isPastDate = dateIST < todayIST;
+      const isPastDate = dateIST.getTime() < todayIST.getTime();
       const isSunday = dateIST.getDay() === 0;
       const isWednesday = location === "Kukatpally" && dateIST.getDay() === 3;
 
@@ -341,6 +339,7 @@ const Hematologybmt = () => {
         disabled: isPastDate || isSunday || isWednesday,
       });
     }
+
     return days;
   };
 
