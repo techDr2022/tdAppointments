@@ -58,6 +58,15 @@ const BookingPageContent = () => {
             ending="17:00"
           />
         );
+      case "Dr.PrithviPerum":
+        return (
+          <DrForms
+            doctorid={13}
+            imageSrc="/Logo Mathrutwa.webp"
+            starting="9:00"
+            ending="21:00"
+          />
+        );
       default:
         return <AppointmentBookingFormSkeleton />;
     }
