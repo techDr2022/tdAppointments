@@ -107,55 +107,57 @@ export async function SendConfirmMessageBMT(Details: AppointmentDetailsType) {
       });
       return false;
     }
+    if (timeslot.isAvailable !== false) {
+      const date = timeslot.startTime.toISOString().split("T");
+      const trimmedTime = date[1].slice(0, 5);
+      const [hours, minutes] = trimmedTime.split(":").map(Number);
+      const period = hours >= 12 ? "PM" : "AM";
+      const formattedHours = hours % 12 || 12; // Convert 0 to 12 for midnight
+      const formattedTime = `${formattedHours}:${minutes
+        .toString()
+        .padStart(2, "0")} ${period}`;
 
-    const date = timeslot.startTime.toISOString().split("T");
-    const trimmedTime = date[1].slice(0, 5);
-    const [hours, minutes] = trimmedTime.split(":").map(Number);
-    const period = hours >= 12 ? "PM" : "AM";
-    const formattedHours = hours % 12 || 12; // Convert 0 to 12 for midnight
-    const formattedTime = `${formattedHours}:${minutes
-      .toString()
-      .padStart(2, "0")} ${period}`;
+      console.log("Confirmation message details:", {
+        patientName: patient.name,
+        serviceName: service.name,
+        appointmentDate: date[0],
+        appointmentTime: trimmedTime,
+        location: Details.location,
+      });
 
-    console.log("Confirmation message details:", {
-      patientName: patient.name,
-      serviceName: service.name,
-      appointmentDate: date[0],
-      appointmentTime: trimmedTime,
-      location: Details.location,
-    });
+      const messageVariables = {
+        1: patient.name,
+        2: service.name,
+        3: date[0],
+        4: formattedTime,
+        5: Details.location ?? "Not specified",
+      };
 
-    const messageVariables = {
-      1: patient.name,
-      2: service.name,
-      3: date[0],
-      4: formattedTime,
-      5: Details.location ?? "Not specified",
-    };
+      // Send confirmation message
+      await client.messages.create({
+        from: `whatsapp:${whatsappFrom}`,
+        to: `whatsapp:+91${patient.phone}`,
+        contentSid: "HX2a65ac11807b442006bca2465875e179",
+        contentVariables: JSON.stringify(messageVariables),
+      });
 
-    // Send confirmation message
-    await client.messages.create({
-      from: `whatsapp:${whatsappFrom}`,
-      to: `whatsapp:+91${patient.phone}`,
-      contentSid: "HX2a65ac11807b442006bca2465875e179",
-      contentVariables: JSON.stringify(messageVariables),
-    });
+      // Atomic transaction for updates
+      await prisma.$transaction([
+        prisma.timeslot.update({
+          where: { id: timeslot.id },
+          data: { isAvailable: false },
+        }),
+        prisma.appointment.update({
+          where: { id: Details.id },
+          data: { status: "CONFIRMED" },
+        }),
+      ]);
 
-    // Atomic transaction for updates
-    await prisma.$transaction([
-      prisma.timeslot.update({
-        where: { id: timeslot.id },
-        data: { isAvailable: false },
-      }),
-      prisma.appointment.update({
-        where: { id: Details.id },
-        data: { status: "CONFIRMED" },
-      }),
-    ]);
+      await cronJobAction(Details);
 
-    await cronJobAction(Details);
-
-    return true;
+      return true;
+    }
+    return false;
   } catch (err) {
     console.error(err);
     return false;
