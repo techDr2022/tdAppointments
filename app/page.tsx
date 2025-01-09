@@ -67,6 +67,16 @@ const BookingPageContent = () => {
             ending="21:00"
           />
         );
+
+      case "ABSkinClinic":
+        return (
+          <DrForms
+            doctorid={11}
+            imageSrc="/logo Abskin.webp"
+            starting="9:00"
+            ending="21:00"
+          />
+        );
       default:
         return <AppointmentBookingFormSkeleton />;
     }
