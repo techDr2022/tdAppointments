@@ -77,6 +77,15 @@ const BookingPageContent = () => {
             ending="21:00"
           />
         );
+      case "SamanviClinic":
+        return (
+          <DrForms
+            doctorid={14}
+            imageSrc="/logo samanwiClinc.webp"
+            starting="17:00"
+            ending="21:00"
+          />
+        );
       default:
         return <AppointmentBookingFormSkeleton />;
     }
