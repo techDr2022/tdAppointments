@@ -86,6 +86,42 @@ const BookingPageContent = () => {
             ending="21:00"
           />
         );
+      case "Dr.Azadh":
+        return (
+          <DrForms
+            doctorid={15}
+            imageSrc="/Dr-aazadh-logo.webp"
+            starting="9:00"
+            ending="17:00"
+          />
+        );
+      case "Dr.JagdishPusa":
+        return (
+          <DrForms
+            doctorid={16}
+            imageSrc="/drjadishpusalogo.png"
+            starting="9:00"
+            ending="21:00"
+          />
+        );
+      case "avnifertility":
+        return (
+          <DrForms
+            doctorid={17}
+            imageSrc="/avnifertilitylogo.svg"
+            starting="9:00"
+            ending="21:00"
+          />
+        );
+      case "drkirangastro":
+        return (
+          <DrForms
+            doctorid={18}
+            imageSrc="/kiran-logo.webp"
+            starting="7:00"
+            ending="21:00"
+          />
+        );
       default:
         return <AppointmentBookingFormSkeleton />;
     }
