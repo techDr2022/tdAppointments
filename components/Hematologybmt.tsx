@@ -174,6 +174,7 @@ const Hematologybmt = () => {
     "Autologous BMT",
     "Erdheim Chester Disease",
     "VEXAS Syndrome",
+    "Bone Marrow Examination/Testing",
     "Porphyrias",
     "Hemochromatosis",
     "LCH",

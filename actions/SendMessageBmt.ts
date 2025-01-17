@@ -83,7 +83,7 @@ export async function SendMessageBMT(Details: AppointmentDetailsType) {
       client.messages.create({
         from: `whatsapp:${whatsappFrom}`,
         to: `whatsapp:+91${patient.phone}`,
-        contentSid: "HX71642e50cdecf6414b9f022d9171028b",
+        contentSid: "HXa1672e45e06f45afd0111d23ae7ac1a7",
         contentVariables: JSON.stringify(patientMessageVariables),
       }),
     ]);
@@ -116,6 +116,10 @@ export async function SendConfirmMessageBMT(Details: AppointmentDetailsType) {
       const formattedTime = `${formattedHours}:${minutes
         .toString()
         .padStart(2, "0")} ${period}`;
+      const Maplocation =
+        Details.location == "Kukatpally"
+          ? "https://maps.app.goo.gl/h7vdSbEByxfi5Pth7"
+          : "https://maps.app.goo.gl/Y2CKWH6jds7EyRVg6";
 
       console.log("Confirmation message details:", {
         patientName: patient.name,
@@ -131,13 +135,14 @@ export async function SendConfirmMessageBMT(Details: AppointmentDetailsType) {
         3: date[0],
         4: formattedTime,
         5: Details.location ?? "Not specified",
+        6: Maplocation,
       };
 
       // Send confirmation message
       await client.messages.create({
         from: `whatsapp:${whatsappFrom}`,
         to: `whatsapp:+91${patient.phone}`,
-        contentSid: "HX2a65ac11807b442006bca2465875e179",
+        contentSid: "HXfcdbf92e0aa07ed89b98a8d18b72e1f3",
         contentVariables: JSON.stringify(messageVariables),
       });
 
