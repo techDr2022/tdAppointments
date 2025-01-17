@@ -75,6 +75,7 @@ const AppointmentSchema = z.object({
       "Myeloma",
       "Lymphoma",
       "Leukemia",
+      "Bone Marrow Examination/Testing",
     ],
     {
       errorMap: () => ({ message: "Please select a service" }),
