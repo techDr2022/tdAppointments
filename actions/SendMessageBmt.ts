@@ -2,8 +2,9 @@
 import twilio from "twilio";
 import prisma from "@/lib/db";
 
-import { AppointmentDetailsType } from "./SendMessage";
+import { appointmentDetails, AppointmentDetailsType } from "./SendMessage";
 import { cronJobAction } from "./CronExecution";
+import { CreateTimeSlot } from "./CreateTimeslot";
 const accountSid = process.env.TWILIO_ACCOUNT_SID;
 const authToken = process.env.TWILIO_AUTH_TOKEN;
 const whatsappFrom = process.env.WHATSAPP_FROM;
@@ -283,5 +284,145 @@ export async function sendReminderMessageBMT(Details: AppointmentDetailsType) {
   } catch (err) {
     console.error(err);
     return false;
+  }
+}
+
+export async function SendRescheduleMessageBMT({
+  appointmentId,
+  selectedDate,
+  selectedTime,
+}: {
+  appointmentId: number;
+  selectedDate: Date;
+  selectedTime: string;
+}) {
+  try {
+    if (!appointmentId || !selectedDate || !selectedTime) {
+      throw new Error("Missing required input parameters.");
+    }
+
+    const Details = await appointmentDetails(appointmentId);
+    if (!Details) {
+      throw new Error(`Invalid appointmentId: ${appointmentId}`);
+    }
+
+    console.log("Selected Date:", selectedDate);
+
+    const appointmentDate = new Date(selectedDate);
+    const indianTimeOffset = 5.5 * 60 * 60 * 1000; // IST in milliseconds
+    const normalizedDate = new Date(
+      appointmentDate.getTime() + indianTimeOffset
+    );
+
+    const dateKey = normalizedDate.toLocaleDateString("en-CA", {
+      timeZone: "Asia/Kolkata",
+    });
+
+    const Maplocation =
+      Details.location === "Kukatpally"
+        ? "https://maps.app.goo.gl/h7vdSbEByxfi5Pth7"
+        : "https://maps.app.goo.gl/Y2CKWH6jds7EyRVg6";
+
+    if (!Details?.doctor?.id) {
+      throw new Error("Doctor ID is missing in appointment details.");
+    }
+
+    let updatetimeSlot;
+    try {
+      updatetimeSlot = await CreateTimeSlot({
+        date: dateKey,
+        time: selectedTime,
+        doctorid: Details.doctor.id,
+      });
+    } catch (error) {
+      if (error instanceof Error) {
+        throw new Error("Failed to create a time slot. " + error.message);
+      }
+      throw error; // Re-throw non-Error types
+    }
+
+    if (!updatetimeSlot) {
+      throw new Error("Unable to create a valid time slot.");
+    }
+
+    const newDate = new Date(dateKey);
+
+    try {
+      await prisma.appointment.update({
+        where: {
+          id: appointmentId,
+        },
+        data: {
+          date: newDate,
+          status: "RESCHEDULED",
+          timeslotId: updatetimeSlot.id,
+        },
+      });
+    } catch (error) {
+      if (error instanceof Error) {
+        throw new Error("Failed to update appointment. " + error.message);
+      }
+      throw error;
+    }
+
+    try {
+      await prisma.timeslot.update({
+        where: {
+          id: updatetimeSlot.id,
+        },
+        data: {
+          isAvailable: false,
+        },
+      });
+    } catch (error) {
+      if (error instanceof Error) {
+        throw new Error(
+          "Failed to update timeslot availability. " + error.message
+        );
+      }
+      throw error;
+    }
+
+    const date = updatetimeSlot.startTime.toISOString().split("T");
+    const trimmedTime = date[1].slice(0, 5);
+    const [hours, minutes] = trimmedTime.split(":").map(Number);
+    const period = hours >= 12 ? "PM" : "AM";
+    const formattedHours = hours % 12 || 12;
+    const formattedTime = `${formattedHours}:${minutes
+      .toString()
+      .padStart(2, "0")} ${period}`;
+
+    const messageVariables = {
+      1: Details.patient.name,
+      2: Details.patient.name,
+      3: Details.location,
+      4: Details.service?.name,
+      5: date[0],
+      6: formattedTime,
+      7: Maplocation,
+    };
+
+    try {
+      await client.messages.create({
+        from: `whatsapp:${whatsappFrom}`,
+        to: `whatsapp:+91${Details.patient.phone}`,
+        contentSid: "HX38e75743e1684186053a0bded13b6f7b",
+        contentVariables: JSON.stringify(messageVariables),
+      });
+      return true;
+    } catch (error) {
+      if (error instanceof Error) {
+        throw new Error("Failed to send WhatsApp message. " + error.message);
+      }
+      throw error;
+    }
+  } catch (error) {
+    if (error instanceof Error) {
+      console.error("Error in SendRescheduleMessageBMT:", error.message);
+      return error.message;
+    } else {
+      console.error("Unexpected error in SendRescheduleMessageBMT:", error);
+      return "An unexpected error occurred.";
+    }
   }
 }

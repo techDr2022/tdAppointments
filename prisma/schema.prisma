@@ -9,6 +9,9 @@ datasource db {
 
 model Doctor {
   id          Int          @id @default(autoincrement())
+  loginId     String?
+  password    String?
+  tdWebsite   String?
   name        String
   website     String       @unique
   whatsapp    String?
@@ -18,6 +21,7 @@ model Doctor {
   sid_Pcn     String?
   sid_Rm      String?
   sid_Fd      String?
+  sid_resd    String?
   services    Service[]    // One-to-many relation
   timeslots   Timeslot[]   // One-to-many relation
   appointments Appointment[] // One-to-many relation with Appointment

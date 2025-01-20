@@ -63,7 +63,7 @@ export type AppointmentDetailsType = {
   location?: string | null;
 };
 
-async function appointmentDetails(
+export async function appointmentDetails(
   id: number
 ): Promise<AppointmentDetailsType | null> {
   try {

@@ -130,7 +130,7 @@ const feedbackWorker = new Worker<JobData>(
       const { Details } = job.data;
 
       // Call the sendFeedbackMessageBMT function to send the WhatsApp message
-      if (Details.id == 1) {
+      if (Details.doctor.id == 1) {
         const result = await sendFeedbackMessageBMT(Details);
         if (result) {
           console.log("Feedback message sent successfully.");
@@ -165,7 +165,7 @@ const reminderWorker = new Worker<JobData>(
       console.log("Sending reminder for:", Details);
 
       // Simulate sending a reminder (replace with actual implementation)
-      if (Details.id == 1) {
+      if (Details.doctor.id == 1) {
         const result = await sendReminderMessageBMT(Details); // Replace with reminder-specific function if needed
 
         if (result) {

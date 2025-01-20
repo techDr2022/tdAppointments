@@ -16,7 +16,8 @@ export async function SubmitHandlerBMT(data: BMTAppointmentFormData) {
         "Missing required fields: date, time, or WhatsApp number."
       );
     }
-
+    console.log("date", data.date);
+    console.log("time", data.time);
     // Fetch the doctor
     const doctor = await findDoctorById(1);
     if (!doctor) {
