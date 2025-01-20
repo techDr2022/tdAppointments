@@ -47,9 +47,7 @@ export const getDoctorAppointments = async (
         const startTime = new Date(appointment.timeslot.startTime);
 
         // Adjust for timezone (UTC +5:30)
-        const adjustedTime = new Date(
-          startTime.getTime() - 5.5 * 60 * 60 * 1000
-        );
+        const adjustedTime = new Date(startTime.getTime());
 
         const formattedDate = startTime.toLocaleDateString("en-US", {
           day: "2-digit",
