@@ -21,7 +21,6 @@ model Doctor {
   sid_Pcn     String?
   sid_Rm      String?
   sid_Fd      String?
-  sid_resd    String?
   services    Service[]    // One-to-many relation
   timeslots   Timeslot[]   // One-to-many relation
   appointments Appointment[] // One-to-many relation with Appointment
