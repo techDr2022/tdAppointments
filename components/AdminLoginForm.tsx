@@ -84,7 +84,7 @@ const AdminLoginForm = () => {
       const result = await AdminLoginHandler(formData);
       console.log(result);
       if (result == true) {
-        router.push("/admin/dashboard");
+        router.push("/admin/appointments");
       } else {
         alert(result);
       }
