@@ -27,7 +27,7 @@ import {
   SendConfirmMessageBMT,
   SendMessageBMT,
 } from "./SendMessageBmt";
-import { cronJobAction } from "./CronExecution";
+import { cancelAppointmentJobs, cronJobAction } from "./CronExecution";
 
 export type AppointmentDetailsType = {
   doctor: {
@@ -319,6 +319,9 @@ export async function SendCancelMessageAll(Details: AppointmentDetailsType) {
         isAvailable: true,
       },
     });
+
+    const cancelAppointJobs = await cancelAppointmentJobs(Details.id);
+    console.log("cancelled jobs", cancelAppointJobs.message);
     console.log("Appointment status update result:", updateResult);
     console.log("timeSlot update", UpdateTimeSlot);
     return true;

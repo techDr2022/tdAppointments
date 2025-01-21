@@ -12,6 +12,7 @@ import {
   sendFeedbackMessageAll,
   sendReminderMessageAll,
 } from "./ScheduleMessage";
+import prisma from "@/lib/db";
 
 // Ensure dayjs is configured with the timezone plugin
 dayjs.extend(timezone);
@@ -103,10 +104,23 @@ export async function cronJobAction(
           delay: reminderDelay, // Delay in milliseconds
         }
       );
+      await prisma.appointmentJobs.create({
+        data: {
+          feedbackJobId: feedbackJob.id,
+          appointmentId: Details.id,
+          reminderJobId: reminderJob.id,
+        },
+      });
 
       console.log("Reminder job has been scheduled:", reminderJob.id);
     } else {
       console.log("Reminder time has already passed; job not scheduled.");
+      await prisma.appointmentJobs.create({
+        data: {
+          feedbackJobId: feedbackJob.id,
+          appointmentId: Details.id,
+        },
+      });
     }
 
     return { message: "Jobs have been scheduled" };
@@ -199,4 +213,44 @@ reminderWorker.on("failed", (job, err) => {
   console.error(`Reminder job ${job?.id} failed with error:`, err);
 });
 
+export async function removeJobsForAppointment(appointmentId: number) {
+  const jobData = await prisma.appointmentJobs.findUnique({
+    where: { appointmentId },
+  });
+
+  if (jobData) {
+    await prisma.appointmentJobs.delete({
+      where: { appointmentId },
+    });
+  }
+
+  return jobData || { feedbackJobId: null, reminderJobId: null };
+}
+
+export async function cancelAppointmentJobs(
+  appointmentId: number
+): Promise<{ message: string }> {
+  try {
+    const jobData = await prisma.appointmentJobs.findUnique({
+      where: {
+        appointmentId: appointmentId,
+      },
+    });
+
+    if (jobData?.feedbackJobId) {
+      await feedbackQueue.remove(jobData.feedbackJobId);
+      console.log("Removed feedback job:", jobData.feedbackJobId);
+    }
+
+    if (jobData?.reminderJobId) {
+      await reminderQueue.remove(jobData.reminderJobId);
+      console.log("Removed reminder job:", jobData.reminderJobId);
+    }
+
+    return { message: "Jobs canceled successfully" };
+  } catch (err) {
+    console.error("Error canceling jobs:", err);
+    return { message: "Error canceling jobs" };
+  }
+}
 export { feedbackQueue, reminderQueue, feedbackWorker, reminderWorker }; // Export for potential external use

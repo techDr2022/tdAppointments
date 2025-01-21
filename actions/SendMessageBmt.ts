@@ -3,7 +3,7 @@ import twilio from "twilio";
 import prisma from "@/lib/db";
 
 import { appointmentDetails, AppointmentDetailsType } from "./SendMessage";
-import { cronJobAction } from "./CronExecution";
+import { cancelAppointmentJobs, cronJobAction } from "./CronExecution";
 import { CreateTimeSlot } from "./CreateTimeslot";
 const accountSid = process.env.TWILIO_ACCOUNT_SID;
 const authToken = process.env.TWILIO_AUTH_TOKEN;
@@ -227,6 +227,8 @@ export async function SendCancelMessageBMT(Details: AppointmentDetailsType) {
         isAvailable: false,
       },
     });
+    const cancelAppointJobs = await cancelAppointmentJobs(Details.id);
+    console.log("cancelled jobs", cancelAppointJobs.message);
     console.log("Appointment status update result:", updateResult);
     console.log("timeSlot update", UpdateTimeSlot);
     return true;
@@ -358,6 +360,8 @@ export async function SendRescheduleMessageBMT({
           timeslotId: updatetimeSlot.id,
         },
       });
+      const cancelAppointJobs = await cancelAppointmentJobs(Details.id);
+      console.log("cancelledAppointJobs", cancelAppointJobs.message);
     } catch (error) {
       if (error instanceof Error) {
         throw new Error("Failed to update appointment. " + error.message);
@@ -409,6 +413,8 @@ export async function SendRescheduleMessageBMT({
         contentSid: "HX38e75743e1684186053a0bded13b6f7b",
         contentVariables: JSON.stringify(messageVariables),
       });
+
+      await cronJobAction(Details);
       return true;
     } catch (error) {
       if (error instanceof Error) {
