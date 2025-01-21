@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect, useRef } from "react";
 import { ChevronLeft, ChevronRight, X, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { appointmentDetails } from "@/actions/SendMessage";
@@ -90,6 +90,7 @@ const RescheduleModal: React.FC<RescheduleModalProps> = ({
   appointmentId,
 }) => {
   const [currentMonth, setCurrentMonth] = useState(new Date());
+  const modalRef = useRef<HTMLDivElement>(null);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedTime, setSelectedTime] = useState("");
   const [location, setLocation] = useState<string | null>(null);
@@ -98,6 +99,7 @@ const RescheduleModal: React.FC<RescheduleModalProps> = ({
   const [name, setName] = useState<string>("");
   const [loading, setLoading] = useState(true);
   const [success, setSuccess] = useState(false);
+  const [isProcess, setIsprocess] = useState(false);
 
   const locationTimeSlots: { [key: string]: string[] } = {
     "Financial District": [
@@ -165,11 +167,30 @@ const RescheduleModal: React.FC<RescheduleModalProps> = ({
   }, [selectedDate, location]);
 
   useEffect(() => {
+    if (isOpen && !loading) {
+      // const timer = setTimeout(() => {
+      //   if (modalRef.current) {
+      //     modalRef.current.scrollIntoView({
+      //       behavior: "smooth",
+      //       block: "start",
+      //     });
+      //   }
+      // }, 100); // Small delay to ensure DOM is ready
+      if (modalRef.current) {
+        modalRef.current.scrollIntoView({
+          behavior: "instant",
+        });
+      }
+
+      // return () => clearTimeout(timer);
+    }
+  }, [isOpen, loading]);
+
+  // Separate useEffect for data fetching
+  useEffect(() => {
     async function fetchDetails() {
       if (!isOpen || !appointmentId) return;
-      if (isOpen) {
-        document.body.style.overflow = "hidden";
-      }
+
       try {
         setLoading(true);
         const details = await appointmentDetails(appointmentId);
@@ -205,6 +226,7 @@ const RescheduleModal: React.FC<RescheduleModalProps> = ({
         setLoading(false);
       }
     }
+
     fetchDetails();
   }, [appointmentId, isOpen]);
 
@@ -251,6 +273,7 @@ const RescheduleModal: React.FC<RescheduleModalProps> = ({
         selectedTime,
       });
       if (appointmentId) {
+        setIsprocess(true);
         const result = await SendRescheduleMessageBMT({
           appointmentId,
           selectedDate,
@@ -258,7 +281,11 @@ const RescheduleModal: React.FC<RescheduleModalProps> = ({
         });
         if (result === true) {
           setSuccess(true);
-        } else alert(result);
+          setIsprocess(false);
+        } else {
+          alert(result);
+          setIsprocess(false);
+        }
       }
     }
   };
@@ -274,7 +301,7 @@ const RescheduleModal: React.FC<RescheduleModalProps> = ({
   }
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto">
+    <div ref={modalRef} className="fixed inset-0 z-50 overflow-y-auto">
       <div className="min-h-screen px-4 text-center">
         {/* Background overlay */}
         <div
@@ -431,10 +458,10 @@ const RescheduleModal: React.FC<RescheduleModalProps> = ({
                 </Button>
                 <Button
                   onClick={handleReschedule}
-                  disabled={!selectedDate || !selectedTime}
+                  disabled={!selectedDate || !selectedTime || isProcess}
                   className="bg-blue-600 hover:bg-blue-700 px-4 py-2 text-white disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Confirm Reschedule
+                  {isProcess ? "confirming...." : "confirm schedule"}
                 </Button>
               </div>
             </div>

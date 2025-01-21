@@ -260,7 +260,12 @@ export async function sendFeedbackMessageBMT(Details: AppointmentDetailsType) {
 export async function sendReminderMessageBMT(Details: AppointmentDetailsType) {
   try {
     const { patient, timeslot, service } = Details;
-    const date = timeslot.startTime.toISOString().split("T");
+    const startTime = new Date(timeslot.startTime);
+
+    if (isNaN(startTime.getTime())) {
+      throw new Error("Invalid startTime: Unable to parse as a Date.");
+    }
+    const date = startTime.toISOString().split("T");
     const trimmedTime = date[1].slice(0, 5);
     const [hours, minutes] = trimmedTime.split(":").map(Number);
     const period = hours >= 12 ? "PM" : "AM";

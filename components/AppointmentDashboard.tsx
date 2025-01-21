@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState, useMemo, useRef } from "react";
 import { Search } from "lucide-react";
 import {
   Table,
@@ -55,6 +55,7 @@ const STATUS_STYLES: Record<AppointmentStatus, string> = {
 
 const AppointmentsDashboard: React.FC = () => {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const topRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
   const [tdwebsite, setTdwebsite] = useState<string>("");
   const [searchTerm, setSearchTerm] = useState<string>("");
@@ -127,25 +128,8 @@ const AppointmentsDashboard: React.FC = () => {
   };
 
   const handleRescheduleClick = (id: number | null) => (): void => {
-    const currentScrollPosition =
-      window.scrollY || document.documentElement.scrollTop;
-
-    if (currentScrollPosition > 0) {
-      window.scrollTo({
-        top: 0,
-        behavior: "smooth",
-      });
-
-      const scrollDuration = Math.min(500, currentScrollPosition);
-
-      setTimeout(() => {
-        setSelectedAppointmentId(id);
-        setIsRescheduleModalOpen(true);
-      }, scrollDuration);
-    } else {
-      setSelectedAppointmentId(id);
-      setIsRescheduleModalOpen(true);
-    }
+    setSelectedAppointmentId(id);
+    setIsRescheduleModalOpen(true);
   };
 
   const handleCloseReschedule = (): void => {
@@ -155,7 +139,10 @@ const AppointmentsDashboard: React.FC = () => {
 
   return (
     <>
-      <div className="w-full p-4 space-y-4 transition-all duration-300 ease-in-out transform-gpu">
+      <div
+        ref={topRef}
+        className="w-full p-4 space-y-4 transition-all duration-300 ease-in-out transform-gpu"
+      >
         <div className="flex items-center justify-between gap-4 text-sm transition-all duration-300 ease-in-out">
           <div className="flex items-center gap-4 transition-all duration-300 ease-in-out">
             <Select
