@@ -47,6 +47,7 @@ export type AppointmentDetailsType = {
     name: string;
     age: string;
     phone: string;
+    email: string | null;
   };
   service: {
     id: number;

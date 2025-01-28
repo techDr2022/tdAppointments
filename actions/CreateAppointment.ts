@@ -1,3 +1,4 @@
+"use server";
 import prisma from "@/lib/db";
 
 // Define the types for the function parameters

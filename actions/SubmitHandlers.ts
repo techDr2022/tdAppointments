@@ -7,6 +7,7 @@ import { createPatient, findPatientByPhone } from "./patient";
 import { findDoctorById } from "./Doctor";
 import { sendMessage } from "./SendMessage";
 import { AllAppointmentFormData } from "@/components/DrForms";
+import prisma from "@/lib/db";
 
 export async function SubmitHandlerBMT(data: BMTAppointmentFormData) {
   try {
@@ -39,13 +40,35 @@ export async function SubmitHandlerBMT(data: BMTAppointmentFormData) {
 
     console.log("dataKey", dateKey);
     console.log("data.date", data.date);
+    console.log("data.email", data.email);
     // Find or create the patient
     let patient = await findPatientByPhone(data.whatsapp);
+
+    if (patient) {
+      if (
+        patient.name !== data.name ||
+        patient.age !== data.age ||
+        patient.email !== data.email
+      ) {
+        const UpdatePatient = await prisma.patient.update({
+          where: {
+            phone: patient.phone,
+          },
+          data: {
+            name: data.name,
+            age: data.age,
+            email: data.email,
+          },
+        });
+        patient = UpdatePatient;
+      }
+    }
     if (!patient) {
       patient = await createPatient({
         name: data.name,
         age: data.age,
         phone: data.whatsapp,
+        email: data.email,
       });
     }
 
@@ -124,6 +147,7 @@ export async function SubmitHandlerAll(
       name: data.name,
       age: data.age,
       phone: data.whatsapp,
+      email: null,
     });
     const doctor = await findDoctorById(doctorId);
     if (!doctor) {

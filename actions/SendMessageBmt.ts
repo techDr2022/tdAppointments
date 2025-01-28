@@ -5,9 +5,16 @@ import prisma from "@/lib/db";
 import { appointmentDetails, AppointmentDetailsType } from "./SendMessage";
 import { cancelAppointmentJobs, cronJobAction } from "./CronExecution";
 import { CreateTimeSlot } from "./CreateTimeslot";
+import { ResendEmail, sendMailBmt } from "./SendMailBmt";
+import { Resend } from "resend";
+import ConfirmationTemplate from "@/components/EmailTemplates/ConfirmMailTemplate";
+import CancellationEmail from "@/components/EmailTemplates/CancelMailTemplate";
+import FeedbackEmail from "@/components/EmailTemplates/FeedbackTemplate";
 const accountSid = process.env.TWILIO_ACCOUNT_SID;
 const authToken = process.env.TWILIO_AUTH_TOKEN;
 const whatsappFrom = process.env.WHATSAPP_FROM;
+
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 if (!accountSid || !authToken || !whatsappFrom) {
   throw new Error("Missing required environment variables");
@@ -77,7 +84,7 @@ export async function SendMessageBMT(Details: AppointmentDetailsType) {
     await Promise.all([
       client.messages.create({
         from: `whatsapp:${whatsappFrom}`,
-        to: `whatsapp:${doctor.whatsapp}`,
+        to: `whatsapp:${+917337541403}`,
         contentSid: "HX5d0a05c6723a9cda245d1788e0c0c4de",
         contentVariables: JSON.stringify(doctorMessageVariables),
       }),
@@ -89,7 +96,22 @@ export async function SendMessageBMT(Details: AppointmentDetailsType) {
       }),
     ]);
 
-    return true;
+    const EmailResult = await sendMailBmt({
+      patientName: patient.name,
+      patientContact: patient.phone,
+      age: patient.age ?? "Not specified",
+      service: service.name,
+      date: date[0],
+      time: formattedTime,
+      location: Details.location ?? "Not specified",
+      appointmentId: Details.id,
+      patientMail: patient.email,
+    });
+    if (EmailResult.success) {
+      return true;
+    } else {
+      return false;
+    }
   } catch (err) {
     console.error(err);
     return false;
@@ -146,6 +168,29 @@ export async function SendConfirmMessageBMT(Details: AppointmentDetailsType) {
         contentSid: "HXfcdbf92e0aa07ed89b98a8d18b72e1f3",
         contentVariables: JSON.stringify(messageVariables),
       });
+
+      const ConfirmationProps = {
+        PatientName: patient.name,
+        Date: date[0],
+        Time: formattedTime,
+        Service: service.name,
+        PatientContact: patient.phone,
+        Location: Details.location ?? "Not Specified",
+        GoogleMapsLink: Maplocation,
+      };
+
+      if (patient.email) {
+        const { error } = await resend.emails.send({
+          from: `${ResendEmail}`,
+          to: [patient.email],
+          subject: "Your Appointment is Confirmed",
+          react: ConfirmationTemplate(ConfirmationProps),
+        });
+        if (error) {
+          console.log(error);
+          return false;
+        }
+      }
 
       // Atomic transaction for updates
       await prisma.$transaction([
@@ -213,6 +258,25 @@ export async function SendCancelMessageBMT(Details: AppointmentDetailsType) {
 
     console.log("Cancellation message send result:", cancelMessageResult);
 
+    const CancellationProps = {
+      PatientName: patient.name,
+      Date: date[0],
+      Time: formattedTime,
+    };
+
+    if (patient.email) {
+      const { error } = await resend.emails.send({
+        from: `${ResendEmail}`,
+        to: [patient.email],
+        subject: "Your Appointment is Cancelled",
+        react: CancellationEmail(CancellationProps),
+      });
+      if (error) {
+        console.log(error);
+        return false;
+      }
+    }
+
     // Update appointment status
     const updateResult = await prisma.appointment.update({
       where: { id: Details.id },
@@ -224,7 +288,7 @@ export async function SendCancelMessageBMT(Details: AppointmentDetailsType) {
         id: timeslot.id,
       },
       data: {
-        isAvailable: false,
+        isAvailable: true,
       },
     });
     const cancelAppointJobs = await cancelAppointmentJobs(Details.id);
@@ -249,6 +313,22 @@ export async function sendFeedbackMessageBMT(Details: AppointmentDetailsType) {
       contentSid: "HX1a9f43d13f53970c0ecee149a9e40d52",
       contentVariables: JSON.stringify(messageVariables),
     });
+    const FeedbackEmailProps = {
+      PatientName: Details.patient.name,
+      GoogleReviewLink: "https://g.page/r/CR9s-awhOM_NEBM/review",
+    };
+    if (Details.patient.email) {
+      const { error } = await resend.emails.send({
+        from: `${ResendEmail}`,
+        to: [Details.patient.email],
+        subject: "Feedback",
+        react: FeedbackEmail(FeedbackEmailProps),
+      });
+      if (error) {
+        console.log(error);
+        return false;
+      }
+    }
 
     return true;
   } catch (err) {

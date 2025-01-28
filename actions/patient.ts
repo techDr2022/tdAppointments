@@ -33,6 +33,7 @@ export async function createPatient(data: {
   name: string;
   age: string;
   phone: string;
+  email: string | null;
 }) {
   try {
     if (!/^\d{10}$/.test(data.phone)) {
@@ -52,7 +53,8 @@ export async function createPatient(data: {
     if (existingPatient) {
       if (
         existingPatient.name !== data.name ||
-        existingPatient.age !== data.age
+        existingPatient.age !== data.age ||
+        existingPatient.email !== data.email
       ) {
         const UpdatePatient = await prisma.patient.update({
           where: {
@@ -61,6 +63,7 @@ export async function createPatient(data: {
           data: {
             name: data.name,
             age: data.age,
+            email: data.email,
           },
         });
         return UpdatePatient;
@@ -73,6 +76,7 @@ export async function createPatient(data: {
         name: data.name,
         age: data.age,
         phone: data.phone,
+        email: data.email,
       },
     });
 

@@ -14,6 +14,7 @@ import {
   MapPin,
   Stethoscope,
   Cake,
+  Mail,
 } from "lucide-react";
 import { BookedSlots } from "@/actions/BookSlots";
 import AppointmentBookingFormSkeleton from "./AppointmentBookingFormSkeleton";
@@ -23,6 +24,7 @@ import { SubmitHandlerBMT } from "@/actions/SubmitHandlers";
 // Define schema for form validation
 const AppointmentSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters" }),
+  email: z.string().email({ message: "Please enter a valid email address" }),
   age: z
     .string()
     .refine((val) => !isNaN(parseInt(val)), { message: "Age must be a number" })
@@ -87,6 +89,7 @@ const AppointmentSchema = z.object({
 
 export interface BMTAppointmentFormData {
   name: string;
+  email: string;
   age: string;
   whatsapp: string;
   location: string;
@@ -94,7 +97,6 @@ export interface BMTAppointmentFormData {
   date: Date | null;
   time: string;
 }
-
 interface BookedAppointments {
   [date: string]: string[];
 }
@@ -151,6 +153,7 @@ const Hematologybmt = () => {
     resolver: zodResolver(AppointmentSchema),
     defaultValues: {
       name: "",
+      email: "",
       age: "",
       whatsapp: "",
       location: "",
@@ -551,6 +554,27 @@ const Hematologybmt = () => {
                 {errors.whatsapp && (
                   <p className="text-red-500 text-xs mt-1">
                     {errors.whatsapp.message}
+                  </p>
+                )}
+              </div>
+            )}
+          />
+
+          <Controller
+            name="email"
+            control={control}
+            render={({ field }) => (
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-blue-500" />
+                <input
+                  {...field}
+                  type="email"
+                  placeholder="Email Address"
+                  className="w-full pl-10 pr-4 py-3 border-2 border-blue-200 rounded-lg focus:outline-none focus:border-blue-500 transition-colors text-black"
+                />
+                {errors.email && (
+                  <p className="text-red-500 text-xs mt-1">
+                    {errors.email.message}
                   </p>
                 )}
               </div>
