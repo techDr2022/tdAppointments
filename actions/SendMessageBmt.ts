@@ -84,7 +84,7 @@ export async function SendMessageBMT(Details: AppointmentDetailsType) {
     await Promise.all([
       client.messages.create({
         from: `whatsapp:${whatsappFrom}`,
-        to: `whatsapp:${+917337541403}`,
+        to: `whatsapp:${doctor.whatsapp}`,
         contentSid: "HX5d0a05c6723a9cda245d1788e0c0c4de",
         contentVariables: JSON.stringify(doctorMessageVariables),
       }),
