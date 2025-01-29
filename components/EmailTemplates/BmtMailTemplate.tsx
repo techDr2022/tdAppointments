@@ -108,13 +108,13 @@ export const EmailTemplate = ({
 
             <Section style={buttonSection}>
               <Button
-                href={`http://localhost:3000/appointment/confirm/${appointmentId}`}
+                href={`https://tdappointments.com/appointment/confirm/${appointmentId}`}
                 style={confirmButton}
               >
                 CONFIRM
               </Button>
               <Button
-                href={`http://localhost:3000/appointment/cancel/${appointmentId}`}
+                href={`https://tdappointments.com/appointment/cancel/${appointmentId}`}
                 style={cancelButton}
               >
                 CANCEL

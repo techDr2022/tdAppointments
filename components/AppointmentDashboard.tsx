@@ -283,7 +283,7 @@ const AppointmentsDashboard: React.FC = () => {
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={9} className="text-center py-4 text-sm">
+                  <TableCell colSpan={10} className="text-center py-4 text-sm">
                     No appointments found.
                   </TableCell>
                 </TableRow>
