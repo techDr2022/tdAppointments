@@ -3,7 +3,7 @@ import { Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import AppointmentBookingFormSkeleton from "@/components/AppointmentBookingFormSkeleton";
 import Hematologybmt from "@/components/Hematologybmt";
-import DrForms from "@/components/DrForms";
+import DrForms from "../components/DrForms";
 
 const BookingPageContent = () => {
   const searchParams = useSearchParams();
