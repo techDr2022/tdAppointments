@@ -7,6 +7,11 @@ export async function BookedSlots(doctorId: number) {
     const timeslots = await prisma.timeslot.findMany({
       where: {
         doctorId: doctorId,
+        startTime: {
+          gte: new Date(
+            new Date().toLocaleString("en-US", { timeZone: "Asia/Kolkata" })
+          ),
+        },
       },
     });
     if (timeslots) {

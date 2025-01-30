@@ -17,9 +17,9 @@ import {
   Mail,
 } from "lucide-react";
 import { BookedSlots } from "@/actions/BookSlots";
-import AppointmentBookingFormSkeleton from "./AppointmentBookingFormSkeleton";
 import Image from "next/image";
 import { SubmitHandlerBMT } from "@/actions/SubmitHandlers";
+import AppointmentBookingFormSkeleton from "./AppointmentBookingFormSkeleton";
 
 // Define schema for form validation
 const AppointmentSchema = z.object({
@@ -105,7 +105,7 @@ const Hematologybmt = () => {
   const [bookedAppointments, setBookedAppointments] = useState<{
     [date: string]: string[];
   }>({});
-  const [loading, setLoading] = useState(true);
+  const [isClient, setIsClient] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [currentMonth, setCurrentMonth] = useState(new Date());
 
@@ -208,6 +208,32 @@ const Hematologybmt = () => {
     "Lymphoma",
     "Leukemia",
   ];
+
+  useEffect(() => {
+    const interval = setInterval(async () => {
+      try {
+        const newSlots = await BookedSlots(1);
+        if (newSlots) {
+          const updatedAppointments: BookedAppointments = newSlots.reduce(
+            (acc, data) => {
+              acc[data.dateKey] = [...(acc[data.dateKey] || []), data.time];
+              return acc;
+            },
+            {} as BookedAppointments
+          );
+          setBookedAppointments((prev) => ({
+            ...prev,
+            ...updatedAppointments,
+          }));
+        }
+      } catch (error) {
+        console.error("Polling error:", error);
+      }
+    }, 5000); // 5 second interval
+    setIsClient(true);
+    return () => clearInterval(interval);
+  }, []);
+
   const generateTimeSlots = (location: string | null, date: Date | null) => {
     if (!location || !date) {
       return [];
@@ -348,37 +374,16 @@ const Hematologybmt = () => {
     return days;
   };
 
-  useEffect(() => {
-    const fetchDoctorData = async () => {
-      //   // const DoctorDetails = await findDoctorById(1);
-      //   // setDoctor(DoctorDetails as DoctorTypes | null);
-      const slotKeys = await BookedSlots(1);
-      if (slotKeys && slotKeys.length > 0) {
-        const updatedAppointments: BookedAppointments = slotKeys.reduce(
-          (acc, data) => {
-            acc[data.dateKey] = [...(acc[data.dateKey] || []), data.time];
-            return acc;
-          },
-          {} as BookedAppointments
-        ); // Type assertion to specify the type
-        // Merge the current appointments with the new updates
-        setBookedAppointments((prev) => ({
-          ...prev,
-          ...updatedAppointments,
-        }));
-      }
-      setLoading(false);
-    };
-    fetchDoctorData();
-  }, [submitted]);
-  // Success popup - similar to previous implementation
-  if (loading) {
+  if (!isClient) {
     return (
-      <div>
-        <div className="bg-gradient-to-br from-blue-200 to-blue-400 h-screen">
-          {" "}
-          <AppointmentBookingFormSkeleton />
-        </div>
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-200 to-blue-400 ">
+        <Image
+          src="/BmtLogo.png" // Path to your image in the public folder
+          alt="Dr.S.K.Gupta"
+          width={500} // Specify the width of the image
+          height={300} // Specify the height of the image
+        />
+        <AppointmentBookingFormSkeleton />
       </div>
     );
   }
@@ -682,8 +687,8 @@ const Hematologybmt = () => {
               isSlotBooked(watchDate, time)
                 ? "bg-red-300 text-black cursor-not-allowed"
                 : watch("time") === time
-                ? "bg-green-800 text-white border-green-600"
-                : "bg-green-300 text-black border-gray-300 hover:bg-green-200 hover:text-black"
+                  ? "bg-green-800 text-white border-green-600"
+                  : "bg-green-300 text-black border-gray-300 hover:bg-green-200 hover:text-black"
             }`}
                   >
                     {ampm}
