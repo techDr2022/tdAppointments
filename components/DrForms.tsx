@@ -14,7 +14,6 @@ import {
   Cake,
 } from "lucide-react";
 import { BookedSlots } from "@/actions/BookSlots";
-import AppointmentBookingFormSkeleton from "./AppointmentBookingFormSkeleton";
 import Image from "next/image";
 import { SubmitHandlerAll } from "@/actions/SubmitHandlers";
 
@@ -61,7 +60,6 @@ const DrForms = ({
   const [bookedAppointments, setBookedAppointments] = useState<{
     [date: string]: string[];
   }>({});
-  const [loading, setLoading] = useState(true);
   const [submitted, setSubmitted] = useState(false);
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const {
@@ -227,31 +225,26 @@ const DrForms = ({
             return acc;
           },
           {} as BookedAppointments
-        ); // Type assertion to specify the type
+        );
 
-        // Merge the current appointments with the new updates
         setBookedAppointments((prev) => ({
           ...prev,
           ...updatedAppointments,
         }));
-        setLoading(false);
-      } else {
-        setLoading(false);
       }
     };
+
+    // Initial fetch
     fetchDoctorData();
-  }, [submitted]);
-  // Success popup - similar to previous implementation
-  if (loading) {
-    return (
-      <div>
-        <div className="bg-gradient-to-br from-blue-200 to-blue-400 h-screen">
-          {" "}
-          <AppointmentBookingFormSkeleton />
-        </div>
-      </div>
-    );
-  }
+
+    // Set up polling interval
+    const intervalId = setInterval(fetchDoctorData, 10000); // 10000ms = 5 seconds
+
+    // Cleanup function to clear the interval when component unmounts
+    return () => {
+      clearInterval(intervalId);
+    };
+  }, [doctorid]);
 
   if (submitted) {
     const submittedData = watch();

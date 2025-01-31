@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useMemo, useEffect } from "react";
-import { useForm, Controller, SubmitHandler } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { ToastContainer, toast } from "react-toastify";
@@ -98,16 +98,26 @@ export interface BMTAppointmentFormData {
   time: string;
 }
 interface BookedAppointments {
-  [date: string]: string[];
+  [key: string]: string[];
+}
+
+interface TimeSlot {
+  time: string;
+  ampm: string;
+  label: string;
 }
 
 const Hematologybmt = () => {
-  const [bookedAppointments, setBookedAppointments] = useState<{
-    [date: string]: string[];
-  }>({});
+  const [bookedAppointments, setBookedAppointments] =
+    useState<BookedAppointments>({});
   const [isClient, setIsClient] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [pendingBookings, setPendingBookings] = useState<Set<string>>(
+    new Set()
+  );
   const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [lastPollTime, setLastPollTime] = useState(Date.now());
+  const POLL_INTERVAL = 3000; // 3 seconds
 
   // Location and service configurations
   const locationOptions = [
@@ -165,6 +175,7 @@ const Hematologybmt = () => {
 
   const watchLocation = watch("location");
   const watchDate = watch("date");
+  const watchTime = watch("time");
 
   // Dynamic time slots based on location
 
@@ -209,117 +220,150 @@ const Hematologybmt = () => {
     "Leukemia",
   ];
 
+  const addPendingBooking = (date: Date, time: string) => {
+    const dateKey = date.toLocaleDateString("en-CA");
+    setPendingBookings((prev) => {
+      const newSet = new Set(prev);
+      newSet.add(`${dateKey}-${time}`);
+      return newSet;
+    });
+  };
+
+  // Enhanced polling function with debouncing
   useEffect(() => {
-    const interval = setInterval(async () => {
+    const pollSlots = async () => {
+      const now = Date.now();
+      if (now - lastPollTime < POLL_INTERVAL) return;
+
       try {
         const newSlots = await BookedSlots(1);
         if (newSlots) {
-          const updatedAppointments: BookedAppointments = newSlots.reduce(
-            (acc, data) => {
+          const updatedAppointments = newSlots.reduce(
+            (acc: { [key: string]: string[] }, data) => {
               acc[data.dateKey] = [...(acc[data.dateKey] || []), data.time];
               return acc;
             },
-            {} as BookedAppointments
+            {}
           );
+
           setBookedAppointments((prev) => ({
             ...prev,
             ...updatedAppointments,
           }));
+          setLastPollTime(now);
         }
       } catch (error) {
         console.error("Polling error:", error);
       }
-    }, 5000); // 5 second interval
-    setIsClient(true);
-    return () => clearInterval(interval);
-  }, []);
+    };
 
-  const generateTimeSlots = (location: string | null, date: Date | null) => {
-    if (!location || !date) {
+    const intervalId = setInterval(pollSlots, POLL_INTERVAL);
+    setIsClient(true);
+    return () => clearInterval(intervalId);
+  }, [lastPollTime]);
+
+  // Generate time slots based on location
+  const generateTimeSlots = (
+    location: string | null,
+    date: Date | null
+  ): TimeSlot[] => {
+    if (!location || !date || !locationTimeSlots[location]) {
       return [];
     }
 
-    // Convert the provided date to the Asia/Kolkata timezone
     const selectedDate = new Date(
       date.toLocaleString("en-US", { timeZone: "Asia/Kolkata" })
     );
 
-    return (
-      locationTimeSlots[location]
-        ?.map((time) => {
-          const [hours, minutes] = time.split(":");
+    return locationTimeSlots[location]
+      .map((time) => {
+        const [hours, minutes] = time.split(":");
+        const slotDate = new Date(selectedDate);
+        slotDate.setHours(parseInt(hours), parseInt(minutes), 0, 0);
 
-          // Create a Date object for the time slot on the selected date
-          const slotDate = new Date(selectedDate);
-          slotDate.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+        const now = new Date();
+        const currentTime = new Date(
+          now.toLocaleString("en-US", { timeZone: "Asia/Kolkata" })
+        );
 
-          // Get the current time in the Asia/Kolkata timezone
-          const now = new Date();
-          const currentTime = new Date(
-            now.toLocaleString("en-US", { timeZone: "Asia/Kolkata" })
-          );
+        if (
+          selectedDate.toDateString() === currentTime.toDateString() &&
+          slotDate < currentTime
+        ) {
+          return null;
+        }
 
-          // Skip past time slots for today
-          if (
-            selectedDate.toDateString() === currentTime.toDateString() &&
-            slotDate < currentTime
-          ) {
-            return null;
-          }
-
-          const formattedSlot = {
-            time,
-            label: new Intl.DateTimeFormat("en-US", {
-              hour: "2-digit",
-              minute: "2-digit",
-              timeZone: "Asia/Kolkata",
-            }).format(slotDate),
-            ampm: new Intl.DateTimeFormat("en-US", {
-              hour: "2-digit",
-              minute: "2-digit",
-              hour12: true,
-              timeZone: "Asia/Kolkata",
-            }).format(slotDate),
-          };
-
-          return formattedSlot;
-        })
-        .filter((slot) => slot !== null) || []
-    ); // Remove null values and handle undefined
+        return {
+          time,
+          label: new Intl.DateTimeFormat("en-US", {
+            hour: "2-digit",
+            minute: "2-digit",
+            timeZone: "Asia/Kolkata",
+          }).format(slotDate),
+          ampm: new Intl.DateTimeFormat("en-US", {
+            hour: "2-digit",
+            minute: "2-digit",
+            hour12: true,
+            timeZone: "Asia/Kolkata",
+          }).format(slotDate),
+        };
+      })
+      .filter((slot): slot is TimeSlot => slot !== null);
   };
 
   const timeSlots = useMemo(() => {
     return generateTimeSlots(watchLocation, watchDate);
   }, [watchLocation, watchDate]);
 
-  const isSlotBooked = (date: Date, time: string) => {
+  const isSlotBooked = (date: Date, time: string): boolean => {
     if (!date) return false;
-    const tempDate = new Date(date);
-    const normalizedDate = new Date(
-      tempDate.getFullYear(),
-      tempDate.getMonth(),
-      tempDate.getDate()
-    );
+    const dateKey = date.toLocaleDateString("en-CA");
+    const bookingKey = `${dateKey}-${time}`;
 
-    // Format the date as YYYY-MM-DD using local date methods
-    const dateKey = normalizedDate.toLocaleDateString("en-CA");
-    return (
-      bookedAppointments[dateKey] && bookedAppointments[dateKey].includes(time)
+    return Boolean(
+      bookedAppointments[dateKey]?.includes(time) ||
+        pendingBookings.has(bookingKey)
     );
   };
 
-  const onSubmit: SubmitHandler<BMTAppointmentFormData> = async (data) => {
-    try {
-      const result = await SubmitHandlerBMT(data); // Call the server-side handler
+  // Enhanced submit handler with optimistic updates
+  const onSubmit = async (data: BMTAppointmentFormData) => {
+    if (!data.date) return;
 
+    try {
+      addPendingBooking(data.date, data.time);
+
+      const result = await SubmitHandlerBMT(data);
       if (result?.success) {
-        setSubmitted(true); // Mark form as submitted
-      } else {
-        toast.error("An unexpected error occurred."); // Error notification
+        setSubmitted(true);
+      }
+      if (!result?.success) {
+        setPendingBookings((prev) => {
+          const newSet = new Set(prev);
+          newSet.delete(
+            `${data.date?.toLocaleDateString("en-CA")}-${data.time}`
+          );
+          return newSet;
+        });
+        toast.error("Unable to book the slot. Please try again.");
+      }
+
+      const newSlots = await BookedSlots(1);
+      if (newSlots) {
+        const updatedAppointments = newSlots.reduce<BookedAppointments>(
+          (acc, data) => {
+            if (data.dateKey) {
+              acc[data.dateKey] = [...(acc[data.dateKey] || []), data.time];
+            }
+            return acc;
+          },
+          {}
+        );
+        setBookedAppointments((prev) => ({ ...prev, ...updatedAppointments }));
       }
     } catch (err) {
-      console.error("Error during form submission:", err); // Log error for debugging
-      toast.error("Something went wrong. Please try again."); // Generic error message
+      console.error("Error during form submission:", err);
+      toast.error("Something went wrong. Please try again.");
     }
   };
 
@@ -431,14 +475,42 @@ const Hematologybmt = () => {
     );
   }
 
+  const TimeSlotButton: React.FC<{
+    time: string;
+    ampm: string;
+    date: Date;
+  }> = ({ time, ampm, date }) => (
+    <button
+      type="button"
+      onClick={() => setValue("time", time, { shouldValidate: true })}
+      disabled={isSlotBooked(date, time)}
+      className={`
+        text-xs p-2 rounded-lg border font-medium transition-all duration-200
+        ${
+          isSlotBooked(date, time)
+            ? "bg-red-300 text-black cursor-not-allowed opacity-50"
+            : watchTime === time
+              ? "bg-green-800 text-white border-green-600 scale-105"
+              : "bg-green-300 text-black border-gray-300 hover:bg-green-200 hover:scale-105"
+        }
+      `}
+    >
+      {ampm}
+      {pendingBookings.has(`${date.toLocaleDateString("en-CA")}-${time}`) && (
+        <span className="ml-1 animate-pulse">⏳</span>
+      )}
+    </button>
+  );
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-100 to-blue-300 flex flex-col md:flex-row md:items-center md:justify-center p-4">
       <ToastContainer />
       <Image
-        src="/BmtLogo.png" // Path to your image in the public folder
+        src="/BmtLogo.png"
         alt="Dr.S.K.Gupta"
-        width={500} // Specify the width of the image
-        height={300} // Specify the height of the image
+        width={500}
+        height={300}
+        className="mb-4 md:mb-0 md:mr-8"
       />
       <div className="bg-white shadow-2xl rounded-2xl p-6 max-w-md w-full">
         <h1 className="text-2xl font-bold text-blue-800 mb-6 text-center">
@@ -464,7 +536,7 @@ const Hematologybmt = () => {
                     </option>
                   ))}
                 </select>
-                {errors.location && (
+                {errors?.location && (
                   <p className="text-red-500 text-xs mt-1">
                     {errors.location.message}
                   </p>
@@ -491,7 +563,7 @@ const Hematologybmt = () => {
                     </option>
                   ))}
                 </select>
-                {errors.service && (
+                {errors?.service && (
                   <p className="text-red-500 text-xs mt-1">
                     {errors.service.message}
                   </p>
@@ -499,6 +571,7 @@ const Hematologybmt = () => {
               </div>
             )}
           />
+
           {/* Name Input */}
           <Controller
             name="name"
@@ -512,7 +585,7 @@ const Hematologybmt = () => {
                   placeholder="Full Name"
                   className="w-full pl-10 pr-4 py-3 border-2 border-blue-200 rounded-lg focus:outline-none focus:border-blue-500 transition-colors text-black"
                 />
-                {errors.name && (
+                {errors?.name && (
                   <p className="text-red-500 text-xs mt-1">
                     {errors.name.message}
                   </p>
@@ -534,7 +607,7 @@ const Hematologybmt = () => {
                   placeholder="Age"
                   className="w-full pl-10 pr-4 py-3 border-2 border-blue-200 rounded-lg focus:outline-none focus:border-blue-500 transition-colors text-black"
                 />
-                {errors.age && (
+                {errors?.age && (
                   <p className="text-red-500 text-xs mt-1">
                     {errors.age.message}
                   </p>
@@ -556,7 +629,7 @@ const Hematologybmt = () => {
                   placeholder="WhatsApp Number"
                   className="w-full pl-10 pr-4 py-3 border-2 border-green-200 rounded-lg focus:outline-none focus:border-green-500 transition-colors text-black"
                 />
-                {errors.whatsapp && (
+                {errors?.whatsapp && (
                   <p className="text-red-500 text-xs mt-1">
                     {errors.whatsapp.message}
                   </p>
@@ -565,6 +638,7 @@ const Hematologybmt = () => {
             )}
           />
 
+          {/* Email Input */}
           <Controller
             name="email"
             control={control}
@@ -577,7 +651,7 @@ const Hematologybmt = () => {
                   placeholder="Email Address"
                   className="w-full pl-10 pr-4 py-3 border-2 border-blue-200 rounded-lg focus:outline-none focus:border-blue-500 transition-colors text-black"
                 />
-                {errors.email && (
+                {errors?.email && (
                   <p className="text-red-500 text-xs mt-1">
                     {errors.email.message}
                   </p>
@@ -586,7 +660,7 @@ const Hematologybmt = () => {
             )}
           />
 
-          {/* Compact Calendar */}
+          {/* Calendar Section */}
           {watchLocation && (
             <div className="bg-gray-50 rounded-lg p-4">
               <div className="flex items-center justify-between mb-4">
@@ -597,7 +671,7 @@ const Hematologybmt = () => {
                     newMonth.setMonth(currentMonth.getMonth() - 1);
                     setCurrentMonth(newMonth);
                   }}
-                  className="text-blue-600 hover:bg-blue-100 p-1 rounded-full"
+                  className="text-blue-600 hover:bg-blue-100 p-1 rounded-full transition-colors"
                 >
                   <ChevronLeft size={20} />
                 </button>
@@ -612,7 +686,7 @@ const Hematologybmt = () => {
                     newMonth.setMonth(currentMonth.getMonth() + 1);
                     setCurrentMonth(newMonth);
                   }}
-                  className="text-blue-600 hover:bg-blue-100 p-1 rounded-full"
+                  className="text-blue-600 hover:bg-blue-100 p-1 rounded-full transition-colors"
                 >
                   <ChevronRight size={20} />
                 </button>
@@ -620,7 +694,7 @@ const Hematologybmt = () => {
 
               <div className="grid grid-cols-7 gap-1 text-center">
                 {["S", "M", "T", "W", "Th", "F", "St"].map((day) => (
-                  <div key={day} className="text-xs text-black">
+                  <div key={day} className="text-xs text-black font-medium">
                     {day}
                   </div>
                 ))}
@@ -639,27 +713,27 @@ const Hematologybmt = () => {
                     }}
                     disabled={dayObj === null || (dayObj && dayObj.disabled)}
                     className={`
-            text-xs p-1 rounded-full
-            ${dayObj === null ? "invisible" : ""}
-            ${
-              dayObj && dayObj.disabled
-                ? "text-gray-300 cursor-not-allowed"
-                : ""
-            }
-            ${
-              watchDate &&
-              dayObj &&
-              watchDate.toDateString() === dayObj.date.toDateString()
-                ? "bg-blue-600 text-white"
-                : "hover:bg-blue-100 text-black"
-            }
-          `}
+                      text-xs p-1 rounded-full transition-colors
+                      ${dayObj === null ? "invisible" : ""}
+                      ${
+                        dayObj && dayObj.disabled
+                          ? "text-gray-300 cursor-not-allowed"
+                          : ""
+                      }
+                      ${
+                        watchDate &&
+                        dayObj &&
+                        watchDate.toDateString() === dayObj.date.toDateString()
+                          ? "bg-blue-600 text-white"
+                          : "hover:bg-blue-100 text-black"
+                      }
+                    `}
                   >
                     {dayObj ? dayObj.day : ""}
                   </button>
                 ))}
               </div>
-              {errors.date && (
+              {errors?.date && (
                 <p className="text-red-500 text-xs mt-1 text-center">
                   {errors.date.message}
                 </p>
@@ -667,7 +741,7 @@ const Hematologybmt = () => {
             </div>
           )}
 
-          {/* Time Slot Selection */}
+          {/* Time Slots */}
           {watchDate && timeSlots.length > 0 && (
             <div className="bg-gray-50 rounded-lg p-4">
               <h3 className="text-sm font-semibold text-black mb-2">
@@ -675,27 +749,15 @@ const Hematologybmt = () => {
               </h3>
               <div className="grid grid-cols-3 gap-2">
                 {timeSlots.map(({ time, ampm }) => (
-                  <button
+                  <TimeSlotButton
                     key={time}
-                    type="button"
-                    onClick={() =>
-                      setValue("time", time, { shouldValidate: true })
-                    }
-                    disabled={isSlotBooked(watchDate, time)}
-                    className={`text-xs p-2 rounded-lg border font-medium
-            ${
-              isSlotBooked(watchDate, time)
-                ? "bg-red-300 text-black cursor-not-allowed"
-                : watch("time") === time
-                  ? "bg-green-800 text-white border-green-600"
-                  : "bg-green-300 text-black border-gray-300 hover:bg-green-200 hover:text-black"
-            }`}
-                  >
-                    {ampm}
-                  </button>
+                    time={time}
+                    ampm={ampm}
+                    date={watchDate}
+                  />
                 ))}
               </div>
-              {errors.time && (
+              {errors?.time && (
                 <p className="text-red-500 text-xs mt-1 text-center">
                   {errors.time.message}
                 </p>
@@ -706,12 +768,21 @@ const Hematologybmt = () => {
           {/* Submit Button */}
           <button
             type="submit"
-            className={`w-full bg-blue-600 text-white px-6 py-3 rounded-full hover:bg-blue-700 transition-colors ${
-              isSubmitting ? "opacity-50 cursor-not-allowed" : ""
-            }`}
             disabled={isSubmitting}
+            className={`
+              w-full bg-blue-600 text-white px-6 py-3 rounded-full
+              hover:bg-blue-700 transition-all duration-200
+              ${isSubmitting ? "opacity-50 cursor-not-allowed" : ""}
+            `}
           >
-            {isSubmitting ? "✔️ Booking..." : "Book Appointment"}
+            {isSubmitting ? (
+              <span className="flex items-center justify-center">
+                <span className="animate-spin mr-2">⏳</span>
+                Booking...
+              </span>
+            ) : (
+              "Book Appointment"
+            )}
           </button>
         </form>
       </div>
