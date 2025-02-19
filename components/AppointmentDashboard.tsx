@@ -1,5 +1,4 @@
 "use client";
-
 import React, { useState, useMemo, useRef, useEffect } from "react";
 import { Search } from "lucide-react";
 import {
@@ -28,18 +27,18 @@ import RescheduleModal from "./Reschedule";
 
 type AppointmentStatus = "CONFIRMED" | "PENDING" | "CANCELLED" | "RESCHEDULED";
 
-// Define the types for the related data
 export interface Appointment {
   id: number;
   name: string;
   phoneNumber: string;
-  location: string | null; // Updated to allow null
+  location: string | null;
   date: string;
   doctor: string;
   time: string;
   treatment: string;
   status: AppointmentStatus;
 }
+
 interface AppointmentResponse {
   website: string;
   appointments: Appointment[];
@@ -72,22 +71,64 @@ const AppointmentsDashboard = ({ initialData }: AppointmentDashboardProps) => {
     number | null
   >(null);
 
+  // Check if fields exist and have non-null values
+  const hasField = useMemo(() => {
+    return {
+      location: appointments.some((app) => app.location !== null),
+      doctor: appointments.some((app) => app.doctor !== null),
+      treatment: appointments.some((app) => app.treatment !== null),
+      time: appointments.some((app) => app.time !== null),
+      status: appointments.some((app) => app.status !== null),
+    };
+  }, [appointments]);
+
+  // Get unique locations from appointments (only if location field exists)
+  const uniqueLocations = useMemo(() => {
+    if (!hasField.location) return [];
+    const locations = new Set(
+      appointments
+        .map((app) => app.location)
+        .filter((loc): loc is string => Boolean(loc)) // Type guard to ensure non-null values
+    );
+    return Array.from(locations);
+  }, [appointments, hasField.location]);
+
+  // Get unique statuses from appointments (only if status field exists)
+  const uniqueStatuses = useMemo(() => {
+    if (!hasField.status) return [];
+    const statuses = new Set(
+      appointments.map((app) => app.status).filter(Boolean)
+    );
+    return Array.from(statuses);
+  }, [appointments, hasField.status]);
+
   const filteredAppointments = useMemo(() => {
     return appointments.filter((appointment) => {
       const matchesSearch = appointment.name
         .toLowerCase()
         .includes(searchTerm.toLowerCase());
       const matchesStatus =
-        filterStatus === "all" || appointment.status === filterStatus;
+        !hasField.status ||
+        filterStatus === "all" ||
+        appointment.status === filterStatus;
       const matchesLocation =
-        filterLocation === "all" || appointment.location === filterLocation;
+        !hasField.location ||
+        filterLocation === "all" ||
+        appointment.location === filterLocation;
       const matchesDate =
         !filterDate ||
         new Date(appointment.date).toLocaleDateString("en-US") ===
           filterDate.toLocaleDateString("en-US");
       return matchesSearch && matchesStatus && matchesLocation && matchesDate;
     });
-  }, [appointments, searchTerm, filterStatus, filterLocation, filterDate]);
+  }, [
+    appointments,
+    searchTerm,
+    filterStatus,
+    filterLocation,
+    filterDate,
+    hasField,
+  ]);
 
   const getStatusBadge = (status: AppointmentStatus) => (
     <Badge className={STATUS_STYLES[status] || "bg-gray-100 text-gray-800"}>
@@ -102,9 +143,8 @@ const AppointmentsDashboard = ({ initialData }: AppointmentDashboardProps) => {
   }, []);
 
   const handleAddAppointmentClick = (): void => {
-    const targetWebsite = tdwebsite;
-    if (targetWebsite) {
-      router.push(targetWebsite);
+    if (tdwebsite) {
+      router.push(tdwebsite);
     } else {
       console.error("Website URL is missing for this appointment.");
     }
@@ -123,6 +163,7 @@ const AppointmentsDashboard = ({ initialData }: AppointmentDashboardProps) => {
   if (!isClient) {
     return <AppointmentLoadingSkeleton />;
   }
+
   return (
     <>
       <div
@@ -131,39 +172,46 @@ const AppointmentsDashboard = ({ initialData }: AppointmentDashboardProps) => {
       >
         <div className="flex items-center justify-between gap-4 text-sm transition-all duration-300 ease-in-out">
           <div className="flex items-center gap-4 transition-all duration-300 ease-in-out">
-            <Select
-              value={filterStatus}
-              onValueChange={setFilterStatus}
-              defaultValue="all"
-            >
-              <SelectTrigger className="w-28 text-sm transition-all duration-300">
-                <SelectValue placeholder="Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All</SelectItem>
-                <SelectItem value="CONFIRMED">Confirmed</SelectItem>
-                <SelectItem value="PENDING">Pending</SelectItem>
-                <SelectItem value="CANCELLED">Cancelled</SelectItem>
-                <SelectItem value="RESCHEDULED">Rescheduled</SelectItem>
-              </SelectContent>
-            </Select>
+            {hasField.status && uniqueStatuses.length > 0 && (
+              <Select
+                value={filterStatus}
+                onValueChange={setFilterStatus}
+                defaultValue="all"
+              >
+                <SelectTrigger className="w-28 text-sm transition-all duration-300">
+                  <SelectValue placeholder="Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All</SelectItem>
+                  {uniqueStatuses.map((status) => (
+                    <SelectItem key={status} value={status}>
+                      {status.charAt(0).toUpperCase() +
+                        status.slice(1).toLowerCase()}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
 
-            <Select
-              value={filterLocation}
-              onValueChange={setFilterLocation}
-              defaultValue="all"
-            >
-              <SelectTrigger className="w-36 text-sm transition-all duration-300">
-                <SelectValue placeholder="Location" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Locations</SelectItem>
-                <SelectItem value="Financial District">
-                  Financial District
-                </SelectItem>
-                <SelectItem value="Kukatpally">Kukatpally</SelectItem>
-              </SelectContent>
-            </Select>
+            {hasField.location && uniqueLocations.length > 0 && (
+              <Select
+                value={filterLocation}
+                onValueChange={setFilterLocation}
+                defaultValue="all"
+              >
+                <SelectTrigger className="w-36 text-sm transition-all duration-300">
+                  <SelectValue placeholder="Location" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Locations</SelectItem>
+                  {uniqueLocations.map((location) => (
+                    <SelectItem key={location} value={location}>
+                      {location}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
           </div>
 
           <div className="flex items-center gap-4 transition-all duration-300 ease-in-out">
@@ -216,12 +264,22 @@ const AppointmentsDashboard = ({ initialData }: AppointmentDashboardProps) => {
                 </TableHead>
                 <TableHead className="text-xs">Name</TableHead>
                 <TableHead className="text-xs">Phone</TableHead>
-                <TableHead className="text-xs">Location</TableHead>
+                {hasField.location && (
+                  <TableHead className="text-xs">Location</TableHead>
+                )}
                 <TableHead className="text-xs">Date</TableHead>
-                <TableHead className="text-xs">Time</TableHead>
-                <TableHead className="text-xs">Doctor</TableHead>
-                <TableHead className="text-xs">Treatment</TableHead>
-                <TableHead className="text-xs">Status</TableHead>
+                {hasField.time && (
+                  <TableHead className="text-xs">Time</TableHead>
+                )}
+                {hasField.doctor && (
+                  <TableHead className="text-xs">Doctor</TableHead>
+                )}
+                {hasField.treatment && (
+                  <TableHead className="text-xs">Treatment</TableHead>
+                )}
+                {hasField.status && (
+                  <TableHead className="text-xs">Status</TableHead>
+                )}
                 <TableHead className="text-xs">Action</TableHead>
               </TableRow>
             </TableHeader>
@@ -240,12 +298,22 @@ const AppointmentsDashboard = ({ initialData }: AppointmentDashboardProps) => {
                     </TableCell>
                     <TableCell>{appointment.name}</TableCell>
                     <TableCell>{appointment.phoneNumber}</TableCell>
-                    <TableCell>{appointment.location}</TableCell>
+                    {hasField.location && (
+                      <TableCell>{appointment.location}</TableCell>
+                    )}
                     <TableCell>{appointment.date}</TableCell>
-                    <TableCell>{appointment.time}</TableCell>
-                    <TableCell>{appointment.doctor}</TableCell>
-                    <TableCell>{appointment.treatment}</TableCell>
-                    <TableCell>{getStatusBadge(appointment.status)}</TableCell>
+                    {hasField.time && <TableCell>{appointment.time}</TableCell>}
+                    {hasField.doctor && (
+                      <TableCell>{appointment.doctor}</TableCell>
+                    )}
+                    {hasField.treatment && (
+                      <TableCell>{appointment.treatment}</TableCell>
+                    )}
+                    {hasField.status && (
+                      <TableCell>
+                        {getStatusBadge(appointment.status)}
+                      </TableCell>
+                    )}
                     <TableCell>
                       <div className="flex space-x-2 transition-all duration-300">
                         <Button
