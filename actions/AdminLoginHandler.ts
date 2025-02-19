@@ -5,19 +5,38 @@ import { AdminFormData } from "@/components/AdminLoginForm";
 import { CredentialsSignin } from "next-auth";
 
 export async function AdminLoginHandler(data: AdminFormData) {
+  if (!data.loginId || !data.password) {
+    return { success: false, message: "All fields are required" };
+  }
+
   try {
-    console.log(data);
-    if (!data.loginId || !data.password) {
-      return "provide all fields";
-    }
-    await signIn("credentials", {
+    const result = await signIn("credentials", {
       loginId: data.loginId,
       password: data.password,
       redirect: false,
     });
-    return true;
+
+    if (result?.error) {
+      return {
+        success: false,
+        message: "Invalid credentials",
+      };
+    }
+
+    // For successful authentication, return success and let the client handle redirect
+    return {
+      success: true,
+      redirectUrl: "/admin/appointments",
+    };
   } catch (error) {
-    const err = error as CredentialsSignin;
-    return err.cause?.err?.message;
+    console.error("Login error:", error);
+
+    return {
+      success: false,
+      message:
+        error instanceof CredentialsSignin
+          ? "Invalid credentials"
+          : "Something went wrong",
+    };
   }
 }

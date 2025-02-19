@@ -17,7 +17,6 @@ interface FormErrors {
 }
 
 const AdminLoginForm = () => {
-  const router = useRouter();
   const [formData, setFormData] = useState<AdminFormData>({
     loginId: "",
     password: "",
@@ -30,6 +29,8 @@ const AdminLoginForm = () => {
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isClient, setisClient] = useState(false);
+  const [redirecting, setRedirecting] = useState(false);
+  const router = useRouter();
 
   const validateForm = (): boolean => {
     const newErrors: FormErrors = {
@@ -81,20 +82,34 @@ const AdminLoginForm = () => {
     setIsSubmitting(true);
     try {
       console.log("Form submitted:", formData);
+
       const result = await AdminLoginHandler(formData);
       console.log(result);
-      if (result == true) {
-        router.push("/admin/appointments");
+
+      if (result?.success) {
+        console.log("Login successful");
+        // Show redirecting message and keep button disabled
+        setRedirecting(true);
+
+        // Use the redirectUrl from the result
+        if (result.redirectUrl) {
+          router.push("admin/appointments");
+        }
       } else {
-        alert(result);
+        setIsSubmitting(false);
+        alert(result?.message || "Login failed. Please try again.");
       }
     } catch (error) {
-      console.error("Login failed:", error);
+      console.error("Unexpected login error:", error);
+      alert("An unexpected error occurred. Please try again.");
     } finally {
-      setIsSubmitting(false);
+      // Only reset isSubmitting if there was an error
+      // Keep it true if redirecting
+      if (!setRedirecting) {
+        setIsSubmitting(false);
+      }
     }
   };
-
   useEffect(() => {
     setisClient(true);
   }, []);
@@ -153,9 +168,13 @@ const AdminLoginForm = () => {
           <Button
             type="submit"
             className="w-full bg-blue-600 hover:bg-blue-700 text-white"
-            disabled={isSubmitting}
+            disabled={isSubmitting || redirecting}
           >
-            {isSubmitting ? "Logging in..." : "Login"}
+            {redirecting
+              ? "Redirecting to dashboard..."
+              : isSubmitting
+                ? "Logging in..."
+                : "Login"}
           </Button>
         </form>
       </CardContent>
