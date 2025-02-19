@@ -122,6 +122,15 @@ const BookingPageContent = () => {
             ending="21:00"
           />
         );
+      case "ragasclinic":
+        return (
+          <DrForms
+            doctorid={20}
+            imageSrc="/raga-logo.png"
+            starting="10:00"
+            ending="21:00"
+          />
+        );
 
       default:
         return <AppointmentBookingFormSkeleton />;
