@@ -122,6 +122,7 @@ const BookingPageContent = () => {
             ending="21:00"
           />
         );
+
       default:
         return <AppointmentBookingFormSkeleton />;
     }

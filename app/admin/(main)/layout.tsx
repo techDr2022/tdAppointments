@@ -2,10 +2,13 @@
 
 import { useState } from "react";
 import Sidebar from "@/components/AdminSidebar";
-import AppointmentsDashboard from "@/components/AppointmentDashboard";
 
-const AdminAppointments = () => {
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+interface AdminLayoutProps {
+  children: React.ReactNode;
+}
+
+const AdminLayout = ({ children }: AdminLayoutProps) => {
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(true);
 
   return (
     <div className="flex h-screen bg-gray-50">
@@ -20,19 +23,19 @@ const AdminAppointments = () => {
           onToggle={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
         />
       </div>
-      {/* Dynamic Dashboard with smooth margin transition */}
+      {/* Dynamic content area with smooth margin transition */}
       <div
         className={`flex-1 overflow-auto transform-gpu transition-all duration-300 ease-in-out ${
-          isSidebarCollapsed ? "pl-6" : "pl-0"
+          isSidebarCollapsed ? "pl-1" : "pl-0"
         }`}
         style={{
           willChange: "padding-left",
         }}
       >
-        <AppointmentsDashboard />
+        {children}
       </div>
     </div>
   );
 };
 
-export default AdminAppointments;
+export default AdminLayout;

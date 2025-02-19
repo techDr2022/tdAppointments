@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, useMemo, useRef } from "react";
+import React, { useState, useMemo, useRef, useEffect } from "react";
 import { Search } from "lucide-react";
 import {
   Table,
@@ -22,7 +22,6 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
-import { getDoctorAppointments } from "@/actions/getAppointments";
 import AppointmentLoadingSkeleton from "./AppointmentDashboardLoading";
 import { useRouter } from "next/navigation";
 import RescheduleModal from "./Reschedule";
@@ -46,6 +45,10 @@ interface AppointmentResponse {
   appointments: Appointment[];
 }
 
+interface AppointmentDashboardProps {
+  initialData: AppointmentResponse;
+}
+
 const STATUS_STYLES: Record<AppointmentStatus, string> = {
   CONFIRMED: "bg-green-200 text-cyan-800 hover:bg-green-400",
   PENDING: "bg-yellow-100 text-yellow-800 hover:bg-yellow-300",
@@ -53,37 +56,21 @@ const STATUS_STYLES: Record<AppointmentStatus, string> = {
   RESCHEDULED: "bg-orange-300 text-black hover:bg-orange-400",
 };
 
-const AppointmentsDashboard: React.FC = () => {
-  const [appointments, setAppointments] = useState<Appointment[]>([]);
+const AppointmentsDashboard = ({ initialData }: AppointmentDashboardProps) => {
+  const [appointments] = useState<Appointment[]>(initialData.appointments);
   const topRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
-  const [tdwebsite, setTdwebsite] = useState<string>("");
+  const [tdwebsite] = useState<string>(initialData.website);
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const [filterLocation, setFilterLocation] = useState<string>("all");
   const [filterDate, setFilterDate] = useState<Date | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [isClient, setIsClient] = useState<boolean>(false);
   const [isRescheduleModalOpen, setIsRescheduleModalOpen] =
     useState<boolean>(false);
   const [selectedAppointmentId, setSelectedAppointmentId] = useState<
     number | null
   >(null);
-
-  useEffect(() => {
-    const fetchAppointments = async () => {
-      try {
-        const data: AppointmentResponse = await getDoctorAppointments(1);
-        setTdwebsite(data.website);
-        setAppointments(data.appointments);
-      } catch (error) {
-        console.error("Error fetching appointments:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchAppointments();
-  }, []);
 
   const filteredAppointments = useMemo(() => {
     return appointments.filter((appointment) => {
@@ -110,13 +97,9 @@ const AppointmentsDashboard: React.FC = () => {
 
   const clearDateFilter = (): void => setFilterDate(null);
 
-  if (loading) {
-    return (
-      <div>
-        <AppointmentLoadingSkeleton />
-      </div>
-    );
-  }
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   const handleAddAppointmentClick = (): void => {
     const targetWebsite = tdwebsite;
@@ -137,6 +120,9 @@ const AppointmentsDashboard: React.FC = () => {
     setSelectedAppointmentId(null);
   };
 
+  if (!isClient) {
+    return <AppointmentLoadingSkeleton />;
+  }
   return (
     <>
       <div
@@ -269,13 +255,6 @@ const AppointmentsDashboard: React.FC = () => {
                           onClick={handleRescheduleClick(appointment.id)}
                         >
                           Reschedule
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="text-gray-500 text-xs h-7 transition-all duration-300 hover:bg-gray-100"
-                        >
-                          Cancel
                         </Button>
                       </div>
                     </TableCell>
