@@ -128,6 +128,8 @@ export async function SubmitHandlerAll(
       );
     }
 
+    console.log("data", data);
+
     // Normalize and format the date
     const appointmentDate = new Date(data.date);
     // Adjust for Indian timezone (UTC+5:30)
@@ -166,6 +168,7 @@ export async function SubmitHandlerAll(
       date: dateKey,
       timeslotId: timeSlot.id,
       doctorId: doctor.id,
+      reason: data.reason,
       patientId: patient.id,
     });
 

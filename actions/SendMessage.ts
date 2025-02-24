@@ -62,6 +62,7 @@ export type AppointmentDetailsType = {
   date: Date;
   status: string;
   location?: string | null;
+  reason?: string | null;
 };
 
 export async function appointmentDetails(
@@ -128,42 +129,84 @@ export async function sendMessage_acknow_confirm(
 
     // Messages for doctor
     const appointmentIdString = Details.id.toString();
-    const doctorMessageVariables = {
-      1: doctor.name,
-      2: patient.name,
-      3: patient.age,
-      4: `${formatedDate}`,
-      5: `${formattedTime}`,
-      6: patient.phone,
-      8: appointmentIdString,
-      9: appointmentIdString,
-    };
 
-    // Messages for patient
-    const patientMessageVariables = {
-      1: patient.name,
-      2: patient.name,
-      3: `${formatedDate}`,
-      4: `${formattedTime}`,
-    };
+    if (doctor.id == 20 || doctor.id == 27) {
+      const doctorMessageVariables = {
+        1: doctor.name,
+        2: patient.name,
+        3: patient.age,
+        4: `${formatedDate}`,
+        5: `${formattedTime}`,
+        6: patient.phone,
+        7: Details.reason || "N/A",
+        8: appointmentIdString,
+        9: appointmentIdString,
+      };
+
+      // Messages for patient
+      const patientMessageVariables = {
+        1: patient.name,
+        2: patient.name,
+        3: `${formatedDate}`,
+        4: `${formattedTime}`,
+        5: doctor.name,
+        6: Details.reason || "N/A",
+      };
+      await Promise.all([
+        client.messages.create({
+          from: `whatsapp:${whatsappFrom}`,
+          to: `whatsapp:${doctor.whatsapp}`,
+          contentSid: `${doctor.sid_doctor}`,
+          contentVariables: JSON.stringify(doctorMessageVariables),
+        }),
+        client.messages.create({
+          from: `whatsapp:${whatsappFrom}`,
+          to: `whatsapp:+91${patient.phone}`,
+          contentSid: `${doctor.sid_Ack}`,
+          contentVariables: JSON.stringify(patientMessageVariables),
+        }),
+      ]);
+
+      return true;
+    } else {
+      const doctorMessageVariables = {
+        1: doctor.name,
+        2: patient.name,
+        3: patient.age,
+        4: `${formatedDate}`,
+        5: `${formattedTime}`,
+        6: patient.phone,
+        8: appointmentIdString,
+        9: appointmentIdString,
+      };
+
+      // Messages for patient
+      const patientMessageVariables = {
+        1: patient.name,
+        2: patient.name,
+        3: `${formatedDate}`,
+        4: `${formattedTime}`,
+      };
+
+      await Promise.all([
+        client.messages.create({
+          from: `whatsapp:${whatsappFrom}`,
+          to: `whatsapp:${doctor.whatsapp}`,
+          contentSid: `${doctor.sid_doctor}`,
+          contentVariables: JSON.stringify(doctorMessageVariables),
+        }),
+        client.messages.create({
+          from: `whatsapp:${whatsappFrom}`,
+          to: `whatsapp:+91${patient.phone}`,
+          contentSid: `${doctor.sid_Ack}`,
+          contentVariables: JSON.stringify(patientMessageVariables),
+        }),
+      ]);
+
+      return true;
+    }
 
     // Send messages in parallel
-    await Promise.all([
-      client.messages.create({
-        from: `whatsapp:${whatsappFrom}`,
-        to: `whatsapp:${doctor.whatsapp}`,
-        contentSid: `${doctor.sid_doctor}`,
-        contentVariables: JSON.stringify(doctorMessageVariables),
-      }),
-      client.messages.create({
-        from: `whatsapp:${whatsappFrom}`,
-        to: `whatsapp:+91${patient.phone}`,
-        contentSid: `${doctor.sid_Ack}`,
-        contentVariables: JSON.stringify(patientMessageVariables),
-      }),
-    ]);
-
-    return true;
   } catch (err) {
     console.error(err);
     return false;
@@ -212,11 +255,23 @@ export async function SendConfirmMessageAll(Details: AppointmentDetailsType) {
       location: Details.location,
     });
 
-    const messageVariables = {
-      1: patient.name,
-      2: `${formatedDate}`,
-      3: `${formattedTime}`,
-    };
+    let messageVariables = {};
+
+    if (doctor.id == 20 || doctor.id == 27) {
+      messageVariables = {
+        1: patient.name,
+        2: `${formatedDate}`,
+        3: `${formattedTime}`,
+        4: Details.doctor.name,
+        5: Details.reason || "N/A",
+      };
+    } else {
+      messageVariables = {
+        1: patient.name,
+        2: `${formatedDate}`,
+        3: `${formattedTime}`,
+      };
+    }
 
     // Send confirmation message
     await client.messages.create({

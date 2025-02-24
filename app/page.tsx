@@ -4,6 +4,7 @@ import { useSearchParams } from "next/navigation";
 import AppointmentBookingFormSkeleton from "@/components/AppointmentBookingFormSkeleton";
 import Hematologybmt from "@/components/Hematologybmt";
 import DrForms from "../components/DrForms";
+import ClinicDrForms from "@/components/ClinicDoctorsForm";
 
 const BookingPageContent = () => {
   const searchParams = useSearchParams();
@@ -123,14 +124,7 @@ const BookingPageContent = () => {
           />
         );
       case "ragasclinic":
-        return (
-          <DrForms
-            doctorid={20}
-            imageSrc="/raga-logo.png"
-            starting="10:00"
-            ending="21:00"
-          />
-        );
+        return <ClinicDrForms clinicId={1} />;
 
       default:
         return <AppointmentBookingFormSkeleton />;

@@ -85,7 +85,9 @@ const AppointmentsDashboard = ({ initialData }: AppointmentDashboardProps) => {
     return {
       location: appointments.some((app) => app.location !== null),
       doctor: appointments.some((app) => app.doctor !== null),
-      treatment: appointments.some((app) => app.treatment !== null),
+      treatment: appointments.some(
+        (app) => app.treatment !== null || app.treatment !== "N/A"
+      ),
       time: appointments.some((app) => app.time !== null),
       status: appointments.some((app) => app.status !== null),
     };

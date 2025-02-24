@@ -11,6 +11,7 @@ export async function AdminLoginHandler(data: AdminFormData) {
 
   try {
     const result = await signIn("credentials", {
+      type: data.type,
       loginId: data.loginId,
       password: data.password,
       redirect: false,

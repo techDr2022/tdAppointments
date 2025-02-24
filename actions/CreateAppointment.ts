@@ -9,6 +9,7 @@ interface CreateAppointmentParams {
   patientId: number;
   serviceId?: number; // Optional, because a service might not be provided
   timeslotId: number;
+  reason?: string;
 }
 
 export async function CreateAppointment({
@@ -16,8 +17,8 @@ export async function CreateAppointment({
   location,
   doctorId,
   patientId,
-  serviceId,
   timeslotId,
+  reason,
 }: CreateAppointmentParams) {
   try {
     // Validate required fields
@@ -67,7 +68,7 @@ export async function CreateAppointment({
         doctorId,
         location,
         patientId,
-        serviceId,
+        reason: reason || null,
         timeslotId,
         status: "PENDING", // Default status
       },

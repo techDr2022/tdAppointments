@@ -5,24 +5,35 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { AdminLoginHandler } from "@/actions/AdminLoginHandler";
 import { useRouter } from "next/navigation";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export interface AdminFormData {
+  type: "Individual" | "Clinic";
   loginId: string;
   password: string;
 }
 
 interface FormErrors {
+  type: string;
   loginId: string;
   password: string;
 }
 
 const AdminLoginForm = () => {
   const [formData, setFormData] = useState<AdminFormData>({
+    type: "Individual",
     loginId: "",
     password: "",
   });
 
   const [errors, setErrors] = useState<FormErrors>({
+    type: "",
     loginId: "",
     password: "",
   });
@@ -34,10 +45,16 @@ const AdminLoginForm = () => {
 
   const validateForm = (): boolean => {
     const newErrors: FormErrors = {
+      type: "",
       loginId: "",
       password: "",
     };
     let isValid = true;
+
+    if (!formData.type) {
+      newErrors.type = "Please select a type";
+      isValid = false;
+    }
 
     if (!formData.loginId) {
       newErrors.loginId = "Login ID is required";
@@ -74,6 +91,20 @@ const AdminLoginForm = () => {
     }
   };
 
+  const handleTypeChange = (value: "Individual" | "Clinic") => {
+    setFormData((prev) => ({
+      ...prev,
+      type: value,
+    }));
+    // Clear type error if it exists
+    if (errors.type) {
+      setErrors((prev) => ({
+        ...prev,
+        type: "",
+      }));
+    }
+  };
+
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
@@ -88,10 +119,8 @@ const AdminLoginForm = () => {
 
       if (result?.success) {
         console.log("Login successful");
-        // Show redirecting message and keep button disabled
         setRedirecting(true);
 
-        // Use the redirectUrl from the result
         if (result.redirectUrl) {
           router.push("admin/appointments");
         }
@@ -103,13 +132,12 @@ const AdminLoginForm = () => {
       console.error("Unexpected login error:", error);
       alert("An unexpected error occurred. Please try again.");
     } finally {
-      // Only reset isSubmitting if there was an error
-      // Keep it true if redirecting
       if (!setRedirecting) {
         setIsSubmitting(false);
       }
     }
   };
+
   useEffect(() => {
     setisClient(true);
   }, []);
@@ -125,6 +153,27 @@ const AdminLoginForm = () => {
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <label
+              htmlFor="type"
+              className="block text-sm font-medium text-blue-600"
+            >
+              Account Type
+            </label>
+            <Select value={formData.type} onValueChange={handleTypeChange}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Select account type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Individual">Individual</SelectItem>
+                <SelectItem value="Clinic">Clinic</SelectItem>
+              </SelectContent>
+            </Select>
+            {errors.type && (
+              <p className="text-sm text-red-500">{errors.type}</p>
+            )}
+          </div>
+
           <div className="space-y-2">
             <label
               htmlFor="loginId"

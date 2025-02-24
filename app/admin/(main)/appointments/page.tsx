@@ -1,6 +1,7 @@
 import { getDoctorAppointments } from "@/actions/getAppointments";
 import { auth } from "@/auth";
 import AppointmentsDashboard from "@/components/AppointmentDashboard";
+import RagasAppointmentsDashboard from "@/components/RagasClinicAppointments";
 import { redirect } from "next/navigation";
 
 export default async function AdminAppointments() {
@@ -29,7 +30,11 @@ export default async function AdminAppointments() {
     // Fetch appointments with error handling
     let appointmentsData;
     try {
-      if (doctorId) appointmentsData = await getDoctorAppointments(doctorId);
+      if (doctorId && session.user.type)
+        appointmentsData = await getDoctorAppointments(
+          doctorId,
+          session.user.type
+        );
     } catch (fetchError) {
       console.error("Error fetching appointments:", fetchError);
       return <div>Error loading appointments. Please try again later.</div>;
@@ -38,6 +43,11 @@ export default async function AdminAppointments() {
     // Validate appointments data
     if (!appointmentsData) {
       return <div>No appointments found</div>;
+    }
+    if (session.user.clinicId) {
+      if (parseInt(session.user.clinicId) === 2) {
+        return <RagasAppointmentsDashboard initialData={appointmentsData} />;
+      }
     }
 
     return <AppointmentsDashboard initialData={appointmentsData} />;

@@ -1,6 +1,10 @@
 import NextAuth, { DefaultSession, NextAuthConfig } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import prisma from "./lib/db";
+import { DoctorType } from "@prisma/client";
+
+// User-facing type for login
+type LoginType = "Individual" | "Clinic";
 
 // Extend the built-in types
 declare module "next-auth" {
@@ -8,16 +12,19 @@ declare module "next-auth" {
     user: {
       id?: string;
       contact?: string | null;
+      type?: LoginType;
+      clinicId?: string | null;
     } & DefaultSession["user"];
   }
 
-  // Extend the built-in User type without recursive reference
   interface User {
     id?: string;
     name?: string | null;
     email?: string | null;
     image?: string | null;
     contact?: string | null;
+    type?: LoginType;
+    clinicId?: string | null;
   }
 }
 
@@ -29,24 +36,48 @@ declare module "@auth/core/jwt" {
     name?: string | null;
     email?: string | null;
     picture?: string | null;
+    type?: LoginType;
+    clinicId?: string | null;
   }
 }
 
-// Define the shape of your Prisma Doctor model
+// Define Prisma model interfaces
 interface PrismaDoctor {
   id: number;
   name: string | null;
   whatsapp: string | null;
-  password: string;
-  loginId: string;
+  password: string | null;
+  loginId: string | null;
+  type: DoctorType;
+  clinicId: number | null;
 }
 
-// Define the configuration
+interface PrismaClinic {
+  id: number;
+  name: string;
+  loginId: string | null;
+  password: string | null;
+  email: string | null;
+  phone: string | null;
+}
+
+// Custom error class for authentication errors
+class AuthError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "AuthError";
+  }
+}
+
 const authConfig: NextAuthConfig = {
   providers: [
     CredentialsProvider({
       name: "Credentials",
       credentials: {
+        type: {
+          label: "Type",
+          type: "text",
+        },
         loginId: {
           label: "Login ID",
           type: "text",
@@ -59,27 +90,66 @@ const authConfig: NextAuthConfig = {
         },
       },
       async authorize(credentials) {
-        if (!credentials?.loginId || !credentials?.password) {
-          return null;
+        try {
+          if (
+            !credentials?.loginId ||
+            !credentials?.password ||
+            !credentials?.type
+          ) {
+            throw new AuthError("Missing required credentials");
+          }
+
+          // Normalize type input
+          const loginType = credentials.type as LoginType;
+          if (loginType === "Clinic") {
+            // Handle clinic login
+            const clinic = (await prisma.clinic.findFirst({
+              where: {
+                loginId: credentials.loginId,
+              },
+            })) as PrismaClinic | null;
+
+            if (!clinic || clinic.password !== credentials.password) {
+              throw new AuthError("Invalid clinic credentials");
+            }
+
+            return {
+              id: clinic.id.toString(),
+              name: clinic.name,
+              email: clinic.email,
+              contact: clinic.phone,
+              type: "Clinic" as LoginType,
+              clinicId: clinic.id.toString(),
+            };
+          } else {
+            // Handle individual doctor login
+            const doctor = (await prisma.doctor.findFirst({
+              where: {
+                loginId: credentials.loginId,
+                type: "INDIVIDUAL" as DoctorType,
+              },
+            })) as PrismaDoctor | null;
+
+            if (!doctor || doctor.password !== credentials.password) {
+              throw new AuthError("Invalid doctor credentials");
+            }
+
+            return {
+              id: doctor.id.toString(),
+              name: doctor.name,
+              email: null,
+              contact: doctor.whatsapp,
+              type: "Individual" as LoginType,
+              clinicId: doctor.clinicId?.toString() || null,
+            };
+          }
+        } catch (error) {
+          if (error instanceof AuthError) {
+            throw new Error(error.message);
+          }
+          console.error("Authentication error:", error);
+          throw new Error("An unexpected error occurred during authentication");
         }
-
-        const doctor = (await prisma.doctor.findFirst({
-          where: {
-            loginId: credentials.loginId,
-          },
-        })) as PrismaDoctor | null;
-
-        if (!doctor || doctor.password !== credentials.password) {
-          return null;
-        }
-
-        return {
-          id: doctor.id.toString(),
-          name: doctor.name,
-          email: null,
-          contact: doctor.whatsapp,
-          image: null,
-        };
       },
     }),
   ],
@@ -88,6 +158,8 @@ const authConfig: NextAuthConfig = {
       if (trigger === "signIn" && user) {
         token.id = user.id;
         token.contact = user.contact;
+        token.type = user.type;
+        token.clinicId = user.clinicId;
       }
       return token;
     },
@@ -98,6 +170,8 @@ const authConfig: NextAuthConfig = {
           ...session.user,
           id: token.id,
           contact: token.contact,
+          type: token.type,
+          clinicId: token.clinicId,
         },
       };
     },
