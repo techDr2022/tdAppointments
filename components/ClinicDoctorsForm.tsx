@@ -90,14 +90,14 @@ const clinics: Clinic[] = [
       {
         id: 20,
         name: "Dr M Raga Sirisha",
-        imageSrc: "/doctors/dr-johnson.jpg",
+        imageSrc: "/raga-logo.png",
         startTime: "09:00",
         endTime: "21:00",
       },
       {
         id: 27,
         name: "Dr. T Rajashekar Reddy",
-        imageSrc: "/doctors/dr-chen.jpg",
+        imageSrc: "/raga-logo.png",
         startTime: "9:00",
         endTime: "21:00",
       },
