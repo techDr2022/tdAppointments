@@ -520,3 +520,143 @@ export async function SendRescheduleMessageBMT({
     }
   }
 }
+
+export async function SendRescheduleMessageRagas({
+  appointmentId,
+  selectedDate,
+  selectedTime,
+}: {
+  appointmentId: number;
+  selectedDate: Date;
+  selectedTime: string;
+}) {
+  try {
+    if (!appointmentId || !selectedDate || !selectedTime) {
+      throw new Error("Missing required input parameters.");
+    }
+
+    const Details = await appointmentDetails(appointmentId);
+    if (!Details) {
+      throw new Error(`Invalid appointmentId: ${appointmentId}`);
+    }
+
+    console.log("Selected Date:", selectedDate);
+
+    const appointmentDate = new Date(selectedDate);
+    const indianTimeOffset = 5.5 * 60 * 60 * 1000; // IST in milliseconds
+    const normalizedDate = new Date(
+      appointmentDate.getTime() + indianTimeOffset
+    );
+
+    const dateKey = normalizedDate.toLocaleDateString("en-CA", {
+      timeZone: "Asia/Kolkata",
+    });
+
+    if (!Details?.doctor?.id) {
+      throw new Error("Doctor ID is missing in appointment details.");
+    }
+
+    let updatetimeSlot;
+    try {
+      updatetimeSlot = await CreateTimeSlot({
+        date: dateKey,
+        time: selectedTime,
+        doctorid: Details.doctor.id,
+        type: "FORM",
+      });
+    } catch (error) {
+      if (error instanceof Error) {
+        throw new Error("Failed to create a time slot. " + error.message);
+      }
+      throw error; // Re-throw non-Error types
+    }
+
+    if (!updatetimeSlot) {
+      throw new Error("Unable to create a valid time slot.");
+    }
+
+    const newDate = new Date(dateKey);
+
+    try {
+      await prisma.appointment.update({
+        where: {
+          id: appointmentId,
+        },
+        data: {
+          date: newDate,
+          status: "RESCHEDULED",
+          timeslotId: updatetimeSlot.id,
+        },
+      });
+      const cancelAppointJobs = await cancelAppointmentJobs(Details.id);
+      console.log("cancelledAppointJobs", cancelAppointJobs.message);
+    } catch (error) {
+      if (error instanceof Error) {
+        throw new Error("Failed to update appointment. " + error.message);
+      }
+      throw error;
+    }
+
+    try {
+      await prisma.timeslot.update({
+        where: {
+          id: updatetimeSlot.id,
+        },
+        data: {
+          isAvailable: false,
+        },
+      });
+    } catch (error) {
+      if (error instanceof Error) {
+        throw new Error(
+          "Failed to update timeslot availability. " + error.message
+        );
+      }
+      throw error;
+    }
+
+    const date = updatetimeSlot.startTime.toISOString().split("T");
+    const trimmedTime = date[1].slice(0, 5);
+    const [hours, minutes] = trimmedTime.split(":").map(Number);
+    const period = hours >= 12 ? "PM" : "AM";
+    const formattedHours = hours % 12 || 12;
+    const formattedTime = `${formattedHours}:${minutes
+      .toString()
+      .padStart(2, "0")} ${period}`;
+
+    const messageVariables = {
+      1: Details.patient.name,
+      2: Details.doctor.name,
+      3: Details.patient.name,
+      4: date[0],
+      5: formattedTime,
+    };
+
+    console.log("Message Variables:", messageVariables);
+
+    try {
+      await client.messages.create({
+        from: `whatsapp:${whatsappFrom}`,
+        to: `whatsapp:+91${Details.patient.phone}`,
+        contentSid: "HX4600f15430f24a4e3810291c8b4d38a0",
+        contentVariables: JSON.stringify(messageVariables),
+      });
+
+      await cronJobAction(Details);
+      return true;
+    } catch (error) {
+      if (error instanceof Error) {
+        throw new Error("Failed to send WhatsApp message. " + error.message);
+      }
+      throw error;
+    }
+  } catch (error) {
+    if (error instanceof Error) {
+      console.error("Error in SendRescheduleRagaMessage:", error.stack);
+      return true;
+    } else {
+      console.error("Unexpected error in SendRescheduleMessageBMT:", error);
+      return "An unexpected error occurred.";
+    }
+  }
+}

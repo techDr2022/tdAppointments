@@ -22,11 +22,11 @@ import { Badge } from "@/components/ui/badge";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import AppointmentLoadingSkeleton from "./AppointmentDashboardLoading";
-import RescheduleModal from "./Reschedule";
 import { SubmitHandlerAll } from "@/actions/SubmitHandlers";
 import { AllAppointmentFormData } from "./DrForms";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import RescheduleRagasModal from "./RescheduleRagas";
 
 type AppointmentStatus = "CONFIRMED" | "PENDING" | "CANCELLED" | "RESCHEDULED";
 
@@ -627,7 +627,7 @@ const RagasAppointmentsDashboard = ({
       </div>
 
       {isRescheduleModalOpen && (
-        <RescheduleModal
+        <RescheduleRagasModal
           isOpen={isRescheduleModalOpen}
           onClose={handleCloseReschedule}
           appointmentId={selectedAppointmentId}
