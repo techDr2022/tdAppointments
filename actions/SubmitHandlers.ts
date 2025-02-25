@@ -100,6 +100,8 @@ export async function SubmitHandlerBMT(data: BMTAppointmentFormData) {
       doctorId: doctor.id,
       patientId: patient.id,
     });
+
+    console.log("appointment", appointment);
     if (!appointment) {
       throw new Error("Failed to create the appointment.");
     }

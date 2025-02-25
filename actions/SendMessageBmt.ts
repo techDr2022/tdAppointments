@@ -30,6 +30,8 @@ export async function SendMessageBMT(Details: AppointmentDetailsType) {
       patientFound: !!patient,
       timeSlotFound: !!timeslot,
     });
+    console.log(Details);
+    console.log("Service found:", service);
 
     if (!doctor || !patient || !timeslot) {
       console.error("Missing required appointment details");

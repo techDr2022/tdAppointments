@@ -17,6 +17,7 @@ export async function CreateAppointment({
   date,
   location,
   doctorId,
+  serviceId,
   patientId,
   timeslotId,
   reason,
@@ -70,6 +71,7 @@ export async function CreateAppointment({
         doctorId,
         location,
         patientId,
+        serviceId,
         reason: reason || null,
         timeslotId,
         status: "PENDING", // Default status
