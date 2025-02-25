@@ -98,6 +98,8 @@ const RescheduleRagasModal: React.FC<RescheduleModalProps> = ({
   const [isProcess, setIsprocess] = useState(false);
 
   const timeSlots = [
+    "09:00",
+    "09:30",
     "10:00",
     "10:30",
     "11:00",
@@ -116,6 +118,9 @@ const RescheduleRagasModal: React.FC<RescheduleModalProps> = ({
     "18:30",
     "19:00",
     "19:30",
+    "20:00",
+    "20:30",
+    "21:00",
   ];
 
   const generateTimeSlots = (date: Date | null) => {
