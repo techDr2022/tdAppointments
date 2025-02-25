@@ -65,7 +65,9 @@ const STATUS_STYLES: Record<AppointmentStatus, string> = {
   RESCHEDULED: "bg-orange-300 text-black hover:bg-orange-400",
 };
 
-const AppointmentsDashboard = ({ initialData }: AppointmentDashboardProps) => {
+const RagasAppointmentsDashboard = ({
+  initialData,
+}: AppointmentDashboardProps) => {
   const topRef = useRef<HTMLDivElement>(null);
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [filterStatus, setFilterStatus] = useState<string>("all");
@@ -635,4 +637,4 @@ const AppointmentsDashboard = ({ initialData }: AppointmentDashboardProps) => {
   );
 };
 
-export default AppointmentsDashboard;
+export default RagasAppointmentsDashboard;

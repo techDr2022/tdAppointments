@@ -13,6 +13,7 @@ export type AppointmentStatus =
 export interface AppointmentDetails {
   id: number;
   name: string;
+  age: string;
   phoneNumber: string;
   location: string | null;
   date: string;

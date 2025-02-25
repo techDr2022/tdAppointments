@@ -46,7 +46,13 @@ export default async function AdminAppointments() {
     }
     if (session.user.clinicId) {
       if (parseInt(session.user.clinicId) === 2) {
-        return <RagasAppointmentsDashboard initialData={appointmentsData} />;
+        const safeAppointmentsData = {
+          ...appointmentsData,
+          doctors: appointmentsData.doctors || [],
+        };
+        return (
+          <RagasAppointmentsDashboard initialData={safeAppointmentsData} />
+        );
       }
     }
 
