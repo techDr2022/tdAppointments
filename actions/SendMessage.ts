@@ -280,12 +280,32 @@ export async function SendConfirmMessageAll(Details: AppointmentDetailsType) {
     }
 
     // Send confirmation message
-    await client.messages.create({
-      from: `whatsapp:${whatsappFrom}`,
-      to: `whatsapp:+91${patient.phone}`,
-      contentSid: `${doctor.sid_Pcf}`,
-      contentVariables: JSON.stringify(messageVariables),
-    });
+    console.log("timeSlotWithType", timeSlotWithType?.type);
+    if (
+      (doctor.id === 20 || doctor.id === 27) &&
+      timeSlotWithType?.type === "MANUAL"
+    ) {
+      console.log("entered");
+      messageVariables = {
+        1: patient.name,
+        2: `${formatedDate}`,
+        3: `${formattedTime}`,
+        4: Details.doctor.name,
+      };
+      await client.messages.create({
+        from: `whatsapp:${whatsappFrom}`,
+        to: `whatsapp:+91${patient.phone}`,
+        contentSid: "HX96e17d4ab1a20f14826f09883e8a7520",
+        contentVariables: JSON.stringify(messageVariables),
+      });
+    } else {
+      await client.messages.create({
+        from: `whatsapp:${whatsappFrom}`,
+        to: `whatsapp:+91${patient.phone}`,
+        contentSid: `${doctor.sid_Pcf}`,
+        contentVariables: JSON.stringify(messageVariables),
+      });
+    }
 
     // Atomic transaction with conditional timeslot update
     if (timeSlotWithType?.type === "FORM") {
