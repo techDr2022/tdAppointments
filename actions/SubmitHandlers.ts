@@ -5,7 +5,7 @@ import { CreateAppointment } from "./CreateAppointment";
 import { CreateTimeSlot } from "./CreateTimeslot";
 import { createPatient, findPatientByPhone } from "./patient";
 import { findDoctorById } from "./Doctor";
-import { sendMessage } from "./SendMessage";
+import { sendConfirmMessage, sendMessage } from "./SendMessage";
 import { AllAppointmentFormData } from "@/components/DrForms";
 import prisma from "@/lib/db";
 
@@ -74,12 +74,14 @@ export async function SubmitHandlerBMT(data: BMTAppointmentFormData) {
 
     // Find the selected service
     const service = doctor?.services?.find((s) => s.name === data.service);
+    console.log("service", service);
     if (!service) {
       throw new Error("Selected service not found for the doctor.");
     }
 
     // Create a timeslot
     const timeSlot = await CreateTimeSlot({
+      type: "FORM",
       date: dateKey,
       time: data.time,
       doctorid: doctor.id,
@@ -90,6 +92,7 @@ export async function SubmitHandlerBMT(data: BMTAppointmentFormData) {
 
     // Create the appointment
     const appointment = await CreateAppointment({
+      type: "FORM",
       date: dateKey,
       location: data.location,
       timeslotId: timeSlot.id,
@@ -119,6 +122,7 @@ export async function SubmitHandlerBMT(data: BMTAppointmentFormData) {
 
 export async function SubmitHandlerAll(
   data: AllAppointmentFormData,
+  type: "MANUAL" | "FORM",
   doctorId: number
 ) {
   try {
@@ -130,21 +134,26 @@ export async function SubmitHandlerAll(
 
     console.log("data", data);
 
-    // Normalize and format the date
     const appointmentDate = new Date(data.date);
-    // Adjust for Indian timezone (UTC+5:30)
-    const indianTimeOffset = 5.5 * 60 * 60 * 1000; // IST in milliseconds
-    const normalizedDate = new Date(
-      appointmentDate.getTime() + indianTimeOffset
-    );
+    let dateKey: string;
 
-    // Get the normalized date in Indian timezone
-    const dateKey = normalizedDate.toLocaleDateString("en-CA", {
-      timeZone: "Asia/Kolkata",
-    });
+    if (type === "FORM") {
+      // Add IST offset only for form submissions
+      const indianTimeOffset = 5.5 * 60 * 60 * 1000;
+      const normalizedDate = new Date(
+        appointmentDate.getTime() + indianTimeOffset
+      );
+      dateKey = normalizedDate.toLocaleDateString("en-CA", {
+        timeZone: "Asia/Kolkata",
+      });
+    } else {
+      // For manual entries, use the date as is
+      dateKey = appointmentDate.toLocaleDateString("en-CA");
+    }
 
     console.log("dataKey", dateKey);
     console.log("data.date", data.date);
+    console.log("doctorId", doctorId);
     const patient = await createPatient({
       name: data.name,
       age: data.age,
@@ -157,6 +166,7 @@ export async function SubmitHandlerAll(
     }
 
     const timeSlot = await CreateTimeSlot({
+      type,
       date: dateKey,
       time: data.time,
       doctorid: doctor.id,
@@ -165,6 +175,7 @@ export async function SubmitHandlerAll(
     console.log("TimeSlot:", timeSlot);
 
     const appointment = await CreateAppointment({
+      type,
       date: dateKey,
       timeslotId: timeSlot.id,
       doctorId: doctor.id,
@@ -173,11 +184,20 @@ export async function SubmitHandlerAll(
     });
 
     // Send a message confirmation
-    const messageResult = await sendMessage(appointment);
-    if (!messageResult) {
-      throw new Error("Failed to send the message.");
-    }
+    if (type === "FORM") {
+      const messageResult = await sendMessage(appointment);
+      if (!messageResult) {
+        throw new Error("Failed to send the message.");
+      }
 
+      return { success: true };
+    } else {
+      const confirmResult = await sendConfirmMessage(appointment);
+      if (!confirmResult) {
+        throw new Error("Failed to send the confirmation message.");
+      }
+      return { success: true };
+    }
     return { success: true };
   } catch (error) {
     console.error("Error in SubmitHandlerBMT:", error);

@@ -22,9 +22,17 @@ export interface AppointmentDetails {
   status: AppointmentStatus;
 }
 
+// Add new interface for doctor details
+export interface DoctorDetails {
+  id: number;
+  name: string;
+}
+
+// Update AppointmentResponse interface
 export interface AppointmentResponse {
   website: string;
   appointments: AppointmentDetails[];
+  doctors?: DoctorDetails[]; // Add optional doctors array
 }
 
 export const getDoctorAppointments = async (
@@ -33,6 +41,7 @@ export const getDoctorAppointments = async (
 ): Promise<AppointmentResponse> => {
   try {
     let appointments;
+    let doctors: DoctorDetails[] = [];
 
     if (type === "Clinic") {
       // For clinics, get appointments for all affiliated doctors
@@ -46,6 +55,12 @@ export const getDoctorAppointments = async (
       if (!clinic) {
         throw new Error("Clinic not found");
       }
+
+      // Store doctors information
+      doctors = clinic.doctors.map((doctor) => ({
+        id: doctor.id,
+        name: doctor.name,
+      }));
 
       // Get appointments for all doctors in the clinic
       appointments = await prisma.appointment.findMany({
@@ -121,6 +136,7 @@ export const getDoctorAppointments = async (
         return {
           id: appointment.id,
           name: appointment.patient.name,
+          age: appointment.patient.age,
           phoneNumber: appointment.patient.phone,
           location: appointment.location,
           date: formattedDate,
@@ -135,6 +151,7 @@ export const getDoctorAppointments = async (
     return {
       website,
       appointments: formattedAppointments,
+      ...(type === "Clinic" && { doctors }), // Only include doctors array for Clinic type
     };
   } catch (error) {
     console.error("Error fetching appointments:", error);

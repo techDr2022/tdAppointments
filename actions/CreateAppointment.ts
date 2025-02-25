@@ -10,6 +10,7 @@ interface CreateAppointmentParams {
   serviceId?: number; // Optional, because a service might not be provided
   timeslotId: number;
   reason?: string;
+  type: "MANUAL" | "FORM";
 }
 
 export async function CreateAppointment({
@@ -19,6 +20,7 @@ export async function CreateAppointment({
   patientId,
   timeslotId,
   reason,
+  type,
 }: CreateAppointmentParams) {
   try {
     // Validate required fields
@@ -57,7 +59,7 @@ export async function CreateAppointment({
       throw new Error("Timeslot not found.");
     }
 
-    if (!timeslot.isAvailable) {
+    if (!timeslot.isAvailable && type === "FORM") {
       throw new Error("The selected timeslot is not available.");
     }
 

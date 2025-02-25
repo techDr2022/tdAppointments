@@ -385,7 +385,7 @@ const ClinicDrForms = ({ clinicId }: { clinicId: number }) => {
 
   const onSubmit = async (data: ClinicAppointmentFormData) => {
     try {
-      const result = await SubmitHandlerAll(data, data.doctorId);
+      const result = await SubmitHandlerAll(data, "FORM", data.doctorId);
       if (result?.success) {
         setSubmitted(true);
       } else {

@@ -12,6 +12,7 @@ enum DoctorType {
   CLINIC_AFFILIATED
 }
 
+
 model Clinic {
   id          Int       @id @default(autoincrement())
   loginId     String?
@@ -100,10 +101,10 @@ model Timeslot {
   startTime    DateTime
   doctorId     Int
   isAvailable  Boolean       @default(true)
+  type         String?
   doctor       Doctor        @relation(fields: [doctorId], references: [id], onDelete: Cascade)
   appointments Appointment[]
 }
-
 model AppointmentJobs {
   id            Int         @id @default(autoincrement())
   appointmentId Int         @unique

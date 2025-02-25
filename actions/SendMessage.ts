@@ -244,6 +244,12 @@ export async function SendConfirmMessageAll(Details: AppointmentDetailsType) {
       return false;
     }
 
+    // Get the timeslot with its type
+    const timeSlotWithType = await prisma.timeslot.findUnique({
+      where: { id: timeslot.id },
+      select: { type: true },
+    });
+
     const resultTimeDate = await FormatedTimeDate(timeslot.startTime);
     const formatedDate = resultTimeDate.formattedDate;
     const formattedTime = resultTimeDate.formattedTime;
@@ -281,17 +287,25 @@ export async function SendConfirmMessageAll(Details: AppointmentDetailsType) {
       contentVariables: JSON.stringify(messageVariables),
     });
 
-    // Atomic transaction for updates
-    await prisma.$transaction([
-      prisma.timeslot.update({
-        where: { id: timeslot.id },
-        data: { isAvailable: false },
-      }),
-      prisma.appointment.update({
+    // Atomic transaction with conditional timeslot update
+    if (timeSlotWithType?.type === "FORM") {
+      await prisma.$transaction([
+        prisma.timeslot.update({
+          where: { id: timeslot.id },
+          data: { isAvailable: false },
+        }),
+        prisma.appointment.update({
+          where: { id: Details.id },
+          data: { status: "CONFIRMED" },
+        }),
+      ]);
+    } else {
+      // Only update appointment status for MANUAL type
+      await prisma.appointment.update({
         where: { id: Details.id },
         data: { status: "CONFIRMED" },
-      }),
-    ]);
+      });
+    }
 
     await cronJobAction(Details);
 
@@ -302,7 +316,7 @@ export async function SendConfirmMessageAll(Details: AppointmentDetailsType) {
   }
 }
 
-async function sendConfirmMessage(appointment: Appointment) {
+export async function sendConfirmMessage(appointment: Appointment) {
   try {
     console.log(
       `Attempting to send confirmation for appointment ID: ${appointment.id}`

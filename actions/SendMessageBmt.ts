@@ -420,6 +420,7 @@ export async function SendRescheduleMessageBMT({
         date: dateKey,
         time: selectedTime,
         doctorid: Details.doctor.id,
+        type: "FORM",
       });
     } catch (error) {
       if (error instanceof Error) {

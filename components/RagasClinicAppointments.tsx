@@ -23,12 +23,22 @@ import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import AppointmentLoadingSkeleton from "./AppointmentDashboardLoading";
 import RescheduleModal from "./Reschedule";
+import { SubmitHandlerAll } from "@/actions/SubmitHandlers";
+import { AllAppointmentFormData } from "./DrForms";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 type AppointmentStatus = "CONFIRMED" | "PENDING" | "CANCELLED" | "RESCHEDULED";
+
+interface DoctorDetails {
+  id: number;
+  name: string;
+}
 
 export interface Appointment {
   id: number;
   name: string;
+  age: string; // Add age field
   phoneNumber: string;
   location: string | null;
   date: string;
@@ -41,6 +51,7 @@ export interface Appointment {
 interface AppointmentResponse {
   website: string;
   appointments: Appointment[];
+  doctors: DoctorDetails[]; // Make doctors required for clinic response
 }
 
 interface AppointmentDashboardProps {
@@ -66,13 +77,13 @@ const AppointmentsDashboard = ({ initialData }: AppointmentDashboardProps) => {
   const [isAddingAppointment, setIsAddingAppointment] = useState(false);
   const [newAppointment, setNewAppointment] = useState({
     name: "",
+    age: "", // Add age field
     phoneNumber: "",
-    location: "",
     date: new Date(),
     time: "",
     doctor: "",
-    treatment: "",
-    status: "PENDING" as AppointmentStatus,
+    doctorId: 0, // Add doctorId field
+    status: "CONFIRMED" as AppointmentStatus,
   });
   const [isRescheduleModalOpen, setIsRescheduleModalOpen] =
     useState<boolean>(false);
@@ -86,7 +97,7 @@ const AppointmentsDashboard = ({ initialData }: AppointmentDashboardProps) => {
       location: appointments.some((app) => app.location !== null),
       doctor: appointments.some((app) => app.doctor !== null),
       treatment: appointments.some(
-        (app) => app.treatment !== null || app.treatment !== "N/A"
+        (app) => app.treatment !== null && app.treatment !== "N/A"
       ),
       time: appointments.some((app) => app.time !== null),
       status: appointments.some((app) => app.status !== null),
@@ -106,14 +117,9 @@ const AppointmentsDashboard = ({ initialData }: AppointmentDashboardProps) => {
 
   // Get unique doctors from appointments
   const uniqueDoctors = useMemo(() => {
-    if (!hasField.doctor) return [];
-    const doctors = new Set(
-      appointments
-        .map((app) => app.doctor)
-        .filter((doc): doc is string => Boolean(doc))
-    );
-    return Array.from(doctors);
-  }, [appointments, hasField.doctor]);
+    if (!initialData.doctors) return [];
+    return initialData.doctors.map((doctor) => doctor.name);
+  }, [initialData.doctors]);
 
   // Get unique statuses from appointments
   const uniqueStatuses = useMemo(() => {
@@ -179,38 +185,84 @@ const AppointmentsDashboard = ({ initialData }: AppointmentDashboardProps) => {
     setIsAddingAppointment(true);
   };
 
-  const handleSaveAppointment = () => {
-    const appointmentToAdd = {
-      ...newAppointment,
-      id: appointments.length + 1,
-      date: newAppointment.date.toLocaleDateString(),
-    };
+  const handleSaveAppointment = async () => {
+    try {
+      // Format the appointment data for API
+      const formData: AllAppointmentFormData = {
+        name: newAppointment.name,
+        whatsapp: newAppointment.phoneNumber,
+        date: newAppointment.date,
+        time: newAppointment.time,
+        age: newAppointment.age,
+      };
 
-    setAppointments([...appointments, appointmentToAdd]);
-    setIsAddingAppointment(false);
-    setNewAppointment({
-      name: "",
-      phoneNumber: "",
-      location: "",
-      date: new Date(),
-      time: "",
-      doctor: "",
-      treatment: "",
-      status: "PENDING",
-    });
+      const result = await SubmitHandlerAll(
+        formData,
+        "MANUAL",
+        newAppointment.doctorId
+      );
+
+      if (result?.success) {
+        const appointmentToAdd: Appointment = {
+          id: appointments.length + 1,
+          name: newAppointment.name,
+          age: newAppointment.age,
+          phoneNumber: newAppointment.phoneNumber,
+          date: newAppointment.date.toLocaleDateString("en-US", {
+            month: "short",
+            day: "numeric",
+            year: "numeric",
+          }),
+          time: new Date(`2000-01-01T${newAppointment.time}`)
+            .toLocaleTimeString("en-US", {
+              hour: "2-digit",
+              minute: "2-digit",
+              hour12: true,
+            })
+            .toLowerCase(),
+          doctor: newAppointment.doctor,
+          location: null,
+          treatment: "N/A",
+          status: "CONFIRMED" as AppointmentStatus,
+        };
+
+        // Add new appointment at the beginning of the array
+        setAppointments([appointmentToAdd, ...appointments]);
+        setIsAddingAppointment(false);
+
+        // Reset the form
+        setNewAppointment({
+          name: "",
+          age: "",
+          phoneNumber: "",
+          date: new Date(),
+          time: "",
+          doctor: "",
+          doctorId: 0,
+          status: "CONFIRMED",
+        });
+
+        toast.success("New Appointment Added successfully");
+      } else {
+        toast.error("Failed to add new appointment");
+      }
+    } catch (error) {
+      console.error("Error saving appointment:", error);
+      toast.error("Failed to add new appointment");
+    }
   };
 
   const handleCancelAdd = () => {
     setIsAddingAppointment(false);
     setNewAppointment({
       name: "",
+      age: "", // Reset age
       phoneNumber: "",
-      location: "",
       date: new Date(),
       time: "",
       doctor: "",
-      treatment: "",
-      status: "PENDING",
+      doctorId: 0, // Reset doctorId
+      status: "CONFIRMED",
     });
   };
 
@@ -234,6 +286,18 @@ const AppointmentsDashboard = ({ initialData }: AppointmentDashboardProps) => {
         ref={topRef}
         className="w-full p-4 space-y-4 transition-all duration-300 ease-in-out transform-gpu"
       >
+        <ToastContainer
+          position="top-right"
+          autoClose={3000}
+          hideProgressBar={false}
+          newestOnTop={true}
+          closeOnClick
+          rtl={false}
+          pauseOnFocusLoss
+          draggable
+          pauseOnHover
+          theme="light"
+        />
         <div className="flex items-center justify-between gap-4 text-sm transition-all duration-300 ease-in-out">
           <div className="flex items-center gap-4 transition-all duration-300 ease-in-out">
             {hasField.status && uniqueStatuses.length > 0 && (
@@ -347,6 +411,7 @@ const AppointmentsDashboard = ({ initialData }: AppointmentDashboardProps) => {
                   <input type="checkbox" className="rounded border-gray-300" />
                 </TableHead>
                 <TableHead className="text-xs">Name</TableHead>
+                <TableHead className="text-xs">Age</TableHead>
                 <TableHead className="text-xs">Phone</TableHead>
                 {hasField.location && (
                   <TableHead className="text-xs">Location</TableHead>
@@ -392,6 +457,20 @@ const AppointmentsDashboard = ({ initialData }: AppointmentDashboardProps) => {
                   </TableCell>
                   <TableCell>
                     <Input
+                      value={newAppointment.age}
+                      onChange={(e) =>
+                        setNewAppointment({
+                          ...newAppointment,
+                          age: e.target.value,
+                        })
+                      }
+                      className="w-full text-sm"
+                      placeholder="Enter age"
+                      type="number"
+                    />
+                  </TableCell>
+                  <TableCell>
+                    <Input
                       value={newAppointment.phoneNumber}
                       onChange={(e) =>
                         setNewAppointment({
@@ -403,21 +482,6 @@ const AppointmentsDashboard = ({ initialData }: AppointmentDashboardProps) => {
                       placeholder="Enter phone"
                     />
                   </TableCell>
-                  {hasField.location && (
-                    <TableCell>
-                      <Input
-                        value={newAppointment.location}
-                        onChange={(e) =>
-                          setNewAppointment({
-                            ...newAppointment,
-                            location: e.target.value,
-                          })
-                        }
-                        className="w-full text-sm"
-                        placeholder="Enter location"
-                      />
-                    </TableCell>
-                  )}
                   <TableCell>
                     <DatePicker
                       selected={newAppointment.date}
@@ -429,6 +493,7 @@ const AppointmentsDashboard = ({ initialData }: AppointmentDashboardProps) => {
                       }
                       className="w-full border rounded px-3 py-1 text-sm"
                       dateFormat="dd-MMM-yyyy"
+                      minDate={new Date()}
                     />
                   </TableCell>
                   {hasField.time && (
@@ -444,63 +509,40 @@ const AppointmentsDashboard = ({ initialData }: AppointmentDashboardProps) => {
                         className="w-full text-sm"
                         placeholder="Enter time"
                         type="time"
+                        step="900" // 15-minute intervals
                       />
                     </TableCell>
                   )}
                   {hasField.doctor && (
                     <TableCell>
-                      <Input
-                        value={newAppointment.doctor}
-                        onChange={(e) =>
-                          setNewAppointment({
-                            ...newAppointment,
-                            doctor: e.target.value,
-                          })
-                        }
-                        className="w-full text-sm"
-                        placeholder="Enter doctor"
-                      />
-                    </TableCell>
-                  )}
-                  {hasField.treatment && (
-                    <TableCell>
-                      <Input
-                        value={newAppointment.treatment}
-                        onChange={(e) =>
-                          setNewAppointment({
-                            ...newAppointment,
-                            treatment: e.target.value,
-                          })
-                        }
-                        className="w-full text-sm"
-                        placeholder="Enter treatment"
-                      />
-                    </TableCell>
-                  )}
-                  {hasField.status && (
-                    <TableCell>
                       <Select
-                        value={newAppointment.status}
-                        onValueChange={(value) =>
+                        value={newAppointment.doctor}
+                        onValueChange={(value) => {
+                          const selectedDoctor = initialData.doctors.find(
+                            (d) => d.name === value
+                          );
                           setNewAppointment({
                             ...newAppointment,
-                            status: value as AppointmentStatus,
-                          })
-                        }
+                            doctor: value,
+                            doctorId: selectedDoctor?.id || 0,
+                          });
+                        }}
                       >
                         <SelectTrigger className="w-full text-sm">
-                          <SelectValue />
+                          <SelectValue placeholder="Select Doctor" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="PENDING">Pending</SelectItem>
-                          <SelectItem value="CONFIRMED">Confirmed</SelectItem>
-                          <SelectItem value="CANCELLED">Cancelled</SelectItem>
-                          <SelectItem value="RESCHEDULED">
-                            Rescheduled
-                          </SelectItem>
+                          {initialData.doctors.map((doctor) => (
+                            <SelectItem key={doctor.id} value={doctor.name}>
+                              {doctor.name}
+                            </SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
                     </TableCell>
+                  )}
+                  {hasField.status && (
+                    <TableCell>{getStatusBadge("CONFIRMED")}</TableCell>
                   )}
                   <TableCell>
                     <div className="flex space-x-2 transition-all duration-300">
@@ -538,6 +580,7 @@ const AppointmentsDashboard = ({ initialData }: AppointmentDashboardProps) => {
                       />
                     </TableCell>
                     <TableCell>{appointment.name}</TableCell>
+                    <TableCell>{appointment.age}</TableCell>
                     <TableCell>{appointment.phoneNumber}</TableCell>
                     {hasField.location && (
                       <TableCell>{appointment.location}</TableCell>
@@ -547,7 +590,7 @@ const AppointmentsDashboard = ({ initialData }: AppointmentDashboardProps) => {
                     {hasField.doctor && (
                       <TableCell>{appointment.doctor}</TableCell>
                     )}
-                    {hasField.treatment && (
+                    {hasField.treatment && appointment.treatment !== "N/A" && (
                       <TableCell>{appointment.treatment}</TableCell>
                     )}
                     {hasField.status && (

@@ -189,7 +189,7 @@ const DrForms = ({
     try {
       addPendingBooking(data.date, data.time);
 
-      const result = await SubmitHandlerAll(data, doctorid); // Call the server-side handler
+      const result = await SubmitHandlerAll(data, "FORM", doctorid); // Call the server-side handler
 
       if (result?.success) {
         setSubmitted(true); // Mark form as submitted

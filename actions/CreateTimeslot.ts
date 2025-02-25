@@ -1,43 +1,39 @@
 import prisma from "@/lib/db";
 
-// Define types for the function parameters
+// Update the type definition
 type CreateTimeSlotParams = {
-  date: string; // Date in the format 'YYYY-MM-DD'
-  time: string; // Time in the format 'HH:mm'
+  date: string;
+  time: string;
   doctorid: number;
+  type: "MANUAL" | "FORM";
 };
 
 export async function CreateTimeSlot({
+  type,
   date,
   time,
   doctorid,
 }: CreateTimeSlotParams) {
   try {
-    console.log("date, time", date, time);
-
-    // Combine the date and time into a single Date object
-    const combinedDateTime = new Date(`${date}T${time}:00.000Z`); // Ensure correct ISO format
-
-    console.log("combinedDateTime", combinedDateTime);
+    const combinedDateTime = new Date(`${date}T${time}:00.000Z`);
 
     // Check if the time slot already exists
     const timeSlot = await prisma.timeslot.findFirst({
       where: {
         startTime: combinedDateTime,
-        doctorId: doctorid, // Assuming you have a doctorId field in the timeslot table
+        doctorId: doctorid,
       },
     });
+
     if (timeSlot) {
-      console.log("Time slot already exists");
       return timeSlot;
     }
-
-    // If no existing time slot, create a new one
     const newTimeSlot = await prisma.timeslot.create({
       data: {
         startTime: combinedDateTime,
         doctorId: doctorid,
-        isAvailable: true, // Corrected property name from isAvailable to isavaliable
+        isAvailable: true,
+        type,
       },
     });
 
