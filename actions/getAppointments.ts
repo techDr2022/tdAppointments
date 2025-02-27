@@ -118,6 +118,7 @@ export const getDoctorAppointments = async (
 
     const formattedAppointments: AppointmentDetails[] = appointments.map(
       (appointment) => {
+        console.log(appointment.timeslot.startTime, appointment.patient.name);
         const startTime = new Date(appointment.timeslot.startTime);
 
         // Format date

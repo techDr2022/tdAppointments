@@ -35,6 +35,7 @@ export default async function AdminAppointments() {
           doctorId,
           session.user.type
         );
+      console.log("appointmentsData", appointmentsData);
     } catch (fetchError) {
       console.error("Error fetching appointments:", fetchError);
       return <div>Error loading appointments. Please try again later.</div>;
