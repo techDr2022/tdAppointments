@@ -5,6 +5,7 @@ import AppointmentBookingFormSkeleton from "@/components/AppointmentBookingFormS
 import Hematologybmt from "@/components/Hematologybmt";
 import DrForms from "../components/DrForms";
 import ClinicDrForms from "@/components/ClinicDoctorsForm";
+import DrArunaEntForm from "@/components/DrArunaEntForm";
 
 const BookingPageContent = () => {
   const searchParams = useSearchParams();
@@ -123,8 +124,11 @@ const BookingPageContent = () => {
             ending="21:00"
           />
         );
-      case "ragasclinic":
+      case "ragasclinics":
         return <ClinicDrForms clinicId={1} />;
+
+      case "Dr.Aruna":
+        return <DrArunaEntForm />;
 
       default:
         return <AppointmentBookingFormSkeleton />;

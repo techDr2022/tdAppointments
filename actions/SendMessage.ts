@@ -168,6 +168,40 @@ export async function sendMessage_acknow_confirm(
       ]);
 
       return true;
+    } else if (doctor.id == 28) {
+      const doctorMessageVariables = {
+        1: patient.name,
+        2: patient.age,
+        3: Details.location || "N/A",
+        4: `${formatedDate} and ${formattedTime}`,
+        5: patient.phone,
+        6: appointmentIdString,
+        7: appointmentIdString,
+      };
+
+      // Messages for patient
+      const patientMessageVariables = {
+        1: patient.name,
+        2: patient.name,
+        3: `${formatedDate}`,
+        4: `${formattedTime}`,
+        5: Details.location || "N/A",
+      };
+      await Promise.all([
+        client.messages.create({
+          from: `whatsapp:${whatsappFrom}`,
+          to: `whatsapp:${doctor.whatsapp}`,
+          contentSid: `${doctor.sid_doctor}`,
+          contentVariables: JSON.stringify(doctorMessageVariables),
+        }),
+        client.messages.create({
+          from: `whatsapp:${whatsappFrom}`,
+          to: `whatsapp:+91${patient.phone}`,
+          contentSid: `${doctor.sid_Ack}`,
+          contentVariables: JSON.stringify(patientMessageVariables),
+        }),
+      ]);
+      return true;
     } else {
       const doctorMessageVariables = {
         1: doctor.name,
@@ -270,6 +304,22 @@ export async function SendConfirmMessageAll(Details: AppointmentDetailsType) {
         3: `${formattedTime}`,
         4: Details.doctor.name,
         5: Details.reason || "N/A",
+      };
+    } else if (doctor.id == 28) {
+      let mapLink;
+      if (Details.location == "Zenith ENT and SKIN Clinic") {
+        mapLink = "https://maps.app.goo.gl/MbfPQJXzmt7Y6qJSA";
+      } else if (Details.location == "MERAKI ENT INTERNATIONAL HOSPITAL") {
+        mapLink = "https://maps.app.goo.gl/qN9F6TzcMRFb3oho8";
+      } else {
+        mapLink = "https://maps.app.goo.gl/Vm8NDnu4zKj8uqbt6";
+      }
+      messageVariables = {
+        1: patient.name,
+        2: Details.location || "N/A",
+        3: `${formatedDate}`,
+        4: `${formattedTime}`,
+        6: mapLink,
       };
     } else {
       messageVariables = {
