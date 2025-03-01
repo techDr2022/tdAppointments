@@ -174,7 +174,7 @@ const DrArunaEntForm = () => {
       if (now - lastPollTime < POLL_INTERVAL) return;
 
       try {
-        const newSlots = await BookedSlots(1);
+        const newSlots = await BookedSlots(28);
         if (newSlots) {
           const updatedAppointments = newSlots.reduce(
             (acc: { [key: string]: string[] }, data) => {
