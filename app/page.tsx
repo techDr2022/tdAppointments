@@ -129,6 +129,15 @@ const BookingPageContent = () => {
 
       case "Dr.Aruna":
         return <DrArunaEntForm />;
+      case "Keyanclinic":
+        return (
+          <DrForms
+            doctorid={30}
+            imageSrc="/keyan-clinic-logo.png"
+            starting="9:00"
+            ending="21:00"
+          />
+        );
 
       default:
         return <AppointmentBookingFormSkeleton />;
