@@ -56,7 +56,7 @@ const BookingPageContent = () => {
           <DrForms
             doctorid={12}
             imageSrc="/orene-logo.webp"
-            starting="16:00"
+            starting="17:00"
             ending="21:00"
           />
         );
