@@ -56,8 +56,8 @@ const BookingPageContent = () => {
           <DrForms
             doctorid={12}
             imageSrc="/orene-logo.webp"
-            starting="10:00"
-            ending="17:00"
+            starting="16:00"
+            ending="21:00"
           />
         );
       case "Dr.PrithviPerum":
