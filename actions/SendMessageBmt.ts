@@ -80,6 +80,7 @@ export async function SendMessageBMT(Details: AppointmentDetailsType) {
       4: date[0],
       5: formattedTime,
       6: Details.location ?? "Not specified",
+      7: appointmentIdString,
     };
 
     // Send messages in parallel
@@ -93,7 +94,7 @@ export async function SendMessageBMT(Details: AppointmentDetailsType) {
       client.messages.create({
         from: `whatsapp:${whatsappFrom}`,
         to: `whatsapp:+91${patient.phone}`,
-        contentSid: "HXa1672e45e06f45afd0111d23ae7ac1a7",
+        contentSid: "HX98c879ded232b01bb5949151209f8339",
         contentVariables: JSON.stringify(patientMessageVariables),
       }),
     ]);
