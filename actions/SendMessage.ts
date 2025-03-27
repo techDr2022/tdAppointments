@@ -17,7 +17,7 @@ const client = twilio(accountSid, authToken);
 
 // Webhook data validation schema
 const WebhookDataSchema = z.object({
-  Body: z.enum(["CONFIRM", "CANCEL"]), // Allows only "CONFIRM" or "CANCEL"
+  Body: z.enum(["CONFIRM", "CANCEL", "Cancel appointment"]), // Allows "CONFIRM", "CANCEL", or "Cancel appointment"
   ButtonPayload: z.string(),
 });
 
@@ -533,6 +533,10 @@ export async function Webhook(data: unknown) {
         console.log("Processing confirmation for appointment");
         return await sendConfirmMessage(appointment);
       case "CANCEL":
+        console.log("Processing cancellation for appointment");
+        return await sendCancelMessage(appointment);
+
+      case "Cancel appointment":
         console.log("Processing cancellation for appointment");
         return await sendCancelMessage(appointment);
       default:
