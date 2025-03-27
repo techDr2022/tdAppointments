@@ -124,6 +124,7 @@ export async function SendMessageBMT(Details: AppointmentDetailsType) {
 export async function SendConfirmMessageBMT(Details: AppointmentDetailsType) {
   try {
     const { doctor, patient, timeslot, service } = Details;
+
     if (!doctor || !patient || !timeslot || !service) {
       console.error("Missing required appointment details for confirmation", {
         doctorFound: !!doctor,
@@ -162,13 +163,14 @@ export async function SendConfirmMessageBMT(Details: AppointmentDetailsType) {
         4: formattedTime,
         5: Details.location ?? "Not specified",
         6: Maplocation,
+        7: Details.id.toString(),
       };
 
       // Send confirmation message
       await client.messages.create({
         from: `whatsapp:${whatsappFrom}`,
         to: `whatsapp:+91${patient.phone}`,
-        contentSid: "HXfcdbf92e0aa07ed89b98a8d18b72e1f3",
+        contentSid: "HX275a915decc673b06f7af503e0f9161e",
         contentVariables: JSON.stringify(messageVariables),
       });
 
