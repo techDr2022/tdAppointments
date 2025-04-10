@@ -149,6 +149,8 @@ export async function sendMessage_acknow_confirm(
         7: Details.reason || "N/A",
         8: appointmentIdString,
         9: appointmentIdString,
+        10: Details.doctor.name,
+        11: appointmentIdString,
       };
 
       // Messages for patient
