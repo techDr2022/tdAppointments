@@ -765,8 +765,10 @@ export async function SendRescheduleMessageAll({
 
     const messageVariables = {
       1: Details.patient.name,
-      2: date[0],
-      3: formattedTime,
+      2: Details.doctor.name,
+      3: Details.patient.name,
+      4: date[0],
+      5: formattedTime,
     };
 
     console.log("Message Variables:", messageVariables);
