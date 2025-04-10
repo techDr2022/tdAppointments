@@ -220,6 +220,7 @@ export async function sendMessage_acknow_confirm(
         6: patient.phone,
         8: appointmentIdString,
         9: appointmentIdString,
+        7: appointmentIdString,
       };
 
       // Messages for patient
