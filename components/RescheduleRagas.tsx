@@ -163,7 +163,7 @@ const RescheduleRagasModal: React.FC<RescheduleModalProps> = ({
 
   const timeSlotsMemo = useMemo(() => {
     return generateTimeSlots(selectedDate);
-  }, [selectedDate]);
+  }, [selectedDate, generateTimeSlots]);
 
   useEffect(() => {
     if (isOpen && !loading) {
