@@ -193,7 +193,7 @@ const RescheduleDynamic: React.FC<ReschedulePageProps> = ({
         setLoading(true);
         const details = await appointmentDetails(appointmentId);
 
-        console.log(details);
+        console.log("Appointment details:", details);
 
         if (details) {
           // Only set location if it exists and isn't empty
@@ -264,10 +264,12 @@ const RescheduleDynamic: React.FC<ReschedulePageProps> = ({
             }
           }
         } else {
+          console.error(`No appointment found with ID: ${appointmentId}`);
           setNoappointment(true);
         }
       } catch (error) {
         console.error("Error fetching appointment details:", error);
+        setNoappointment(true);
       } finally {
         setLoading(false);
       }

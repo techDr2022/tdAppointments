@@ -391,7 +391,8 @@ export async function SendRescheduleMessageBMT({
 
     const Details = await appointmentDetails(appointmentId);
     if (!Details) {
-      throw new Error(`Invalid appointmentId: ${appointmentId}`);
+      console.error(`Appointment details not found for ID: ${appointmentId}`);
+      return "Appointment not found. Please try again or contact support.";
     }
 
     console.log("Selected Date:", selectedDate);
@@ -536,7 +537,8 @@ export async function SendRescheduleMessageRagas({
 
     const Details = await appointmentDetails(appointmentId);
     if (!Details) {
-      throw new Error(`Invalid appointmentId: ${appointmentId}`);
+      console.error(`Appointment details not found for ID: ${appointmentId}`);
+      return "Appointment not found. Please try again or contact support.";
     }
 
     console.log("Selected Date:", selectedDate);
@@ -676,7 +678,8 @@ export async function SendRescheduleMessageAll({
 
     const Details = await appointmentDetails(appointmentId);
     if (!Details) {
-      throw new Error(`Invalid appointmentId: ${appointmentId}`);
+      console.error(`Appointment details not found for ID: ${appointmentId}`);
+      return "Appointment not found. Please try again or contact support.";
     }
 
     console.log("Selected Date:", selectedDate);

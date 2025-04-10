@@ -82,16 +82,33 @@ export async function appointmentDetails(
     });
 
     // Type guard to ensure the appointment exists
-    if (!appointment) return null;
+    if (!appointment) {
+      console.log(`No appointment found with ID: ${id}`);
+      return null;
+    }
+
+    // Ensure doctor object exists and has timings
+    if (
+      !appointment.doctor ||
+      appointment.doctor.timings === null ||
+      appointment.doctor.timings === undefined
+    ) {
+      console.error(`Doctor information incomplete for appointment ID: ${id}`);
+      return null;
+    }
+
+    // Return with safely cast timings
     return {
       ...appointment,
       doctor: {
         ...appointment.doctor,
-        timings: appointment.doctor.timings as Record<string, string[]>,
+        timings: appointment.doctor.timings
+          ? (appointment.doctor.timings as Record<string, string[]>)
+          : ({} as Record<string, string[]>),
       },
     };
   } catch (err) {
-    console.error(err);
+    console.error(`Error retrieving appointment details for ID ${id}:`, err);
     return null;
   }
 }
@@ -271,6 +288,7 @@ export async function sendMessage(appointment: Appointment) {
         return result;
       }
     }
+    return false;
   } catch (err) {
     console.error("Error in sendMessage:", err);
     return false;
@@ -413,6 +431,7 @@ export async function sendConfirmMessage(appointment: Appointment) {
         return result;
       }
     }
+    return false;
   } catch (error) {
     console.error("Error sending confirmation message:", error);
     return false;

@@ -138,6 +138,24 @@ const BookingPageContent = () => {
             ending="21:00"
           />
         );
+      case "EvolveClinic":
+        return (
+          <DrForms
+            doctorid={31}
+            imageSrc="/evolve-clinic-logo.webp"
+            starting="9:00"
+            ending="19:00"
+          />
+        );
+      case "Drsrinivas":
+        return (
+          <DrForms
+            doctorid={32}
+            imageSrc="/srinivas-logo.webp.webp"
+            starting="17:00"
+            ending="21:00"
+          />
+        );
 
       default:
         return <AppointmentBookingFormSkeleton />;
