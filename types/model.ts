@@ -1,17 +1,48 @@
+export enum DoctorType {
+  INDIVIDUAL = "INDIVIDUAL",
+  CLINIC_AFFILIATED = "CLINIC_AFFILIATED",
+}
+
+export interface Clinic {
+  id: number;
+  loginId?: string | null;
+  password?: string | null;
+  name: string;
+  address?: string | null;
+  phone?: string | null;
+  email?: string | null;
+  website?: string | null;
+  doctors: Doctor[];
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 export interface Doctor {
   id: number;
+  loginId?: string | null;
+  password?: string | null;
+  tdWebsite?: string | null;
   name: string;
   website: string;
-  whatsapp?: string;
-  sid_doctor?: string;
-  sid_Ack?: string;
-  sid_Pcf?: string;
-  sid_Pcn?: string;
-  sid_Rm?: string;
-  sid_Fd?: string;
-  services: Service[]; // One-to-many relation
-  timeslots: Timeslot[]; // One-to-many relation
-  appointments: Appointment[]; // One-to-many relation
+  timings?: Record<string, string[]> | null;
+  whatsapp?: string | null;
+  sid_doctor?: string | null;
+  sid_Ack?: string | null;
+  sid_Pcf?: string | null;
+  sid_resch?: string | null;
+  sid_Pcn?: string | null;
+  sid_Rm?: string | null;
+  sid_Fd?: string | null;
+  qualifications?: string | null;
+  specialization?: string | null;
+  registrationNo?: string | null;
+  type: DoctorType;
+  clinicId?: number | null;
+  clinic?: Clinic | null;
+  services: Service[];
+  timeslots: Timeslot[];
+  appointments: Appointment[];
+  ehrRecords: EhrRecord[];
   createdAt: Date;
   updatedAt: Date;
 }
@@ -20,8 +51,11 @@ export interface Patient {
   id: number;
   name: string;
   age: string;
+  email?: string | null;
   phone: string;
+  sex?: string | null;
   appointments: Appointment[];
+  ehrRecords: EhrRecord[];
   createdAt: Date;
   updatedAt: Date;
 }
@@ -31,17 +65,21 @@ export interface Appointment {
   date: Date;
   status: string;
   location?: string | null;
+  reason?: string | null;
   doctorId: number;
   patientId: number;
-  serviceId: number | null; // Changed from optional to explicitly null
+  serviceId?: number | null;
   timeslotId: number;
-  doctor?: Doctor; // Made optional
-  patient?: Patient; // Made optional
+  doctor: Doctor;
+  patient: Patient;
   service?: Service | null;
-  timeslot?: Timeslot; // Made optional
+  timeslot: Timeslot;
+  ehrRecord?: EhrRecord | null;
+  appointmentJob?: AppointmentJobs | null;
   createdAt: Date;
   updatedAt: Date;
 }
+
 export interface Service {
   id: number;
   name: string;
@@ -55,6 +93,40 @@ export interface Timeslot {
   startTime: Date;
   doctorId: number;
   isAvailable: boolean;
+  type?: string | null;
   doctor: Doctor;
   appointments: Appointment[];
+}
+
+export interface AppointmentJobs {
+  id: number;
+  appointmentId: number;
+  feedbackJobId?: string | null;
+  reminderJobId?: string | null;
+  createdAt: Date;
+  appointment: Appointment;
+}
+
+export interface EhrRecord {
+  id: number;
+  appointmentId: number;
+  doctorId: number;
+  patientId: number;
+  date: Date;
+  weight?: string | null;
+  temperature?: string | null;
+  pulseRate?: string | null;
+  bloodPressure?: string | null;
+  respirationRate?: string | null;
+  oxygenSaturation?: string | null;
+  painScore?: string | null;
+  chiefComplaints?: string | null;
+  diagnosis?: string | null;
+  investigation?: string | null;
+  medicines?: Array<{ name: string; dosage: string; duration: string }> | null;
+  appointment: Appointment;
+  doctor: Doctor;
+  patient: Patient;
+  createdAt: Date;
+  updatedAt: Date;
 }

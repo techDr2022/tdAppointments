@@ -1,3 +1,4 @@
+"use client";
 import React, { useState, useMemo, useEffect, useRef } from "react";
 import { ChevronLeft, ChevronRight, X, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -10,9 +11,9 @@ interface BookedAppointments {
 }
 
 interface RescheduleModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  appointmentId: number | null;
+  isOpen?: boolean;
+  onClose?: () => void;
+  appointmentId?: number | null;
 }
 
 const SuccessMessage = ({
@@ -323,7 +324,7 @@ const RescheduleModal: React.FC<RescheduleModalProps> = ({
               selectedTime={selectedTime}
               name={name}
               location={location}
-              onClose={onClose}
+              onClose={() => onClose?.()}
             />
           ) : (
             <div className="p-6">
@@ -435,8 +436,8 @@ const RescheduleModal: React.FC<RescheduleModalProps> = ({
                             isSlotBooked(selectedDate, time)
                               ? "bg-red-300 text-black cursor-not-allowed"
                               : selectedTime === time
-                              ? "bg-green-800 text-white border-green-600"
-                              : "bg-green-300 text-black border-gray-300 hover:bg-green-200 hover:text-black"
+                                ? "bg-green-800 text-white border-green-600"
+                                : "bg-green-300 text-black border-gray-300 hover:bg-green-200 hover:text-black"
                           }
                         `}
                       >

@@ -10,6 +10,9 @@ import { Resend } from "resend";
 import ConfirmationTemplate from "@/components/EmailTemplates/ConfirmMailTemplate";
 import CancellationEmail from "@/components/EmailTemplates/CancelMailTemplate";
 import FeedbackEmail from "@/components/EmailTemplates/FeedbackTemplate";
+import { formatDateTime } from "./utils/formatDateTime";
+import { validateAppointmentDetails } from "./utils/validateAppointment";
+import { sendWhatsAppMessage } from "./utils/sendWhatsAppMessage";
 const accountSid = process.env.TWILIO_ACCOUNT_SID;
 const authToken = process.env.TWILIO_AUTH_TOKEN;
 const whatsappFrom = process.env.WHATSAPP_FROM;
@@ -24,47 +27,29 @@ const client = twilio(accountSid, authToken);
 
 export async function SendMessageBMT(Details: AppointmentDetailsType) {
   try {
+    // Validate appointment details
+    if (
+      !validateAppointmentDetails(Details, [
+        "doctor",
+        "patient",
+        "timeslot",
+        "service",
+      ])
+    ) {
+      return false;
+    }
+
     const { doctor, patient, timeslot, service } = Details;
-    console.log("Fetched entities:", {
-      doctorFound: !!doctor,
-      patientFound: !!patient,
-      timeSlotFound: !!timeslot,
-    });
-    console.log(Details);
-    console.log("Service found:", service);
 
-    if (!doctor || !patient || !timeslot) {
-      console.error("Missing required appointment details");
-      return false;
-    }
+    // Format date and time
+    const { formattedDate, formattedTime } = formatDateTime(timeslot.startTime);
 
-    if (!service) {
-      console.error("Service not found");
-      return false;
-    }
-
-    const date = timeslot.startTime.toISOString().split("T");
-    const trimmedTime = date[1].slice(0, 5);
-    const [hours, minutes] = trimmedTime.split(":").map(Number);
-    const period = hours >= 12 ? "PM" : "AM";
-    const formattedHours = hours % 12 || 12; // Convert 0 to 12 for midnight
-    const formattedTime = `${formattedHours}:${minutes
-      .toString()
-      .padStart(2, "0")} ${period}`;
-
-    console.log("Preparing message variables:", {
-      doctorWhatsapp: doctor.whatsapp,
-      patientPhone: patient.phone,
-      serviceDate: date[0],
-      serviceTime: formattedTime,
-    });
-
-    // Messages for doctor
+    // Prepare message variables
     const appointmentIdString = Details.id.toString();
     const doctorMessageVariables = {
       1: patient.name,
-      2: service.name,
-      3: `${date[0]} and ${formattedTime}`,
+      2: service!.name,
+      3: `${formattedDate} and ${formattedTime}`,
       4: patient.phone,
       5: appointmentIdString,
       6: appointmentIdString,
@@ -72,49 +57,44 @@ export async function SendMessageBMT(Details: AppointmentDetailsType) {
       8: patient.age ?? "Not specified",
     };
 
-    // Messages for patient
     const patientMessageVariables = {
       1: patient.name,
       2: patient.name,
-      3: service.name,
-      4: date[0],
+      3: service!.name,
+      4: formattedDate,
       5: formattedTime,
       6: Details.location ?? "Not specified",
       7: appointmentIdString,
     };
 
-    // Send messages in parallel
+    // Send messages
     await Promise.all([
-      client.messages.create({
-        from: `whatsapp:${whatsappFrom}`,
-        to: `whatsapp:${doctor.whatsapp}`,
-        contentSid: "HX5d0a05c6723a9cda245d1788e0c0c4de",
-        contentVariables: JSON.stringify(doctorMessageVariables),
-      }),
-      client.messages.create({
-        from: `whatsapp:${whatsappFrom}`,
-        to: `whatsapp:+91${patient.phone}`,
-        contentSid: "HX98c879ded232b01bb5949151209f8339",
-        contentVariables: JSON.stringify(patientMessageVariables),
-      }),
+      sendWhatsAppMessage(
+        doctor.whatsapp || "",
+        "HX5d0a05c6723a9cda245d1788e0c0c4de",
+        doctorMessageVariables
+      ),
+      sendWhatsAppMessage(
+        patient.phone,
+        "HX98c879ded232b01bb5949151209f8339",
+        patientMessageVariables
+      ),
     ]);
 
+    // Send email
     const EmailResult = await sendMailBmt({
       patientName: patient.name,
       patientContact: patient.phone,
       age: patient.age ?? "Not specified",
-      service: service.name,
-      date: date[0],
+      service: service!.name,
+      date: formattedDate,
       time: formattedTime,
       location: Details.location ?? "Not specified",
       appointmentId: Details.id,
       patientMail: patient.email,
     });
-    if (EmailResult.success) {
-      return true;
-    } else {
-      return false;
-    }
+
+    return EmailResult.success;
   } catch (err) {
     console.error(err);
     return false;
@@ -657,7 +637,145 @@ export async function SendRescheduleMessageRagas({
       await client.messages.create({
         from: `whatsapp:${whatsappFrom}`,
         to: `whatsapp:+91${Details.patient.phone}`,
-        contentSid: "HX4600f15430f24a4e3810291c8b4d38a0",
+        contentSid: `${Details.doctor.sid_resch}`,
+        contentVariables: JSON.stringify(messageVariables),
+      });
+
+      await cronJobAction(Details);
+      return true;
+    } catch (error) {
+      if (error instanceof Error) {
+        throw new Error("Failed to send WhatsApp message. " + error.message);
+      }
+      throw error;
+    }
+  } catch (error) {
+    if (error instanceof Error) {
+      console.error("Error in SendRescheduleRagaMessage:", error.stack);
+      return true;
+    } else {
+      console.error("Unexpected error in SendRescheduleMessageBMT:", error);
+      return "An unexpected error occurred.";
+    }
+  }
+}
+
+export async function SendRescheduleMessageAll({
+  appointmentId,
+  selectedDate,
+  selectedTime,
+}: {
+  appointmentId: number;
+  selectedDate: Date;
+  selectedTime: string;
+}) {
+  try {
+    if (!appointmentId || !selectedDate || !selectedTime) {
+      throw new Error("Missing required input parameters.");
+    }
+
+    const Details = await appointmentDetails(appointmentId);
+    if (!Details) {
+      throw new Error(`Invalid appointmentId: ${appointmentId}`);
+    }
+
+    console.log("Selected Date:", selectedDate);
+
+    const appointmentDate = new Date(selectedDate);
+    const indianTimeOffset = 5.5 * 60 * 60 * 1000; // IST in milliseconds
+    const normalizedDate = new Date(
+      appointmentDate.getTime() + indianTimeOffset
+    );
+
+    const dateKey = normalizedDate.toLocaleDateString("en-CA", {
+      timeZone: "Asia/Kolkata",
+    });
+
+    if (!Details?.doctor?.id) {
+      throw new Error("Doctor ID is missing in appointment details.");
+    }
+
+    let updatetimeSlot;
+    try {
+      updatetimeSlot = await CreateTimeSlot({
+        date: dateKey,
+        time: selectedTime,
+        doctorid: Details.doctor.id,
+        type: "FORM",
+      });
+    } catch (error) {
+      if (error instanceof Error) {
+        throw new Error("Failed to create a time slot. " + error.message);
+      }
+      throw error; // Re-throw non-Error types
+    }
+
+    if (!updatetimeSlot) {
+      throw new Error("Unable to create a valid time slot.");
+    }
+
+    const newDate = new Date(dateKey);
+
+    try {
+      await prisma.appointment.update({
+        where: {
+          id: appointmentId,
+        },
+        data: {
+          date: newDate,
+          status: "RESCHEDULED",
+          timeslotId: updatetimeSlot.id,
+        },
+      });
+      const cancelAppointJobs = await cancelAppointmentJobs(Details.id);
+      console.log("cancelledAppointJobs", cancelAppointJobs.message);
+    } catch (error) {
+      if (error instanceof Error) {
+        throw new Error("Failed to update appointment. " + error.message);
+      }
+      throw error;
+    }
+
+    try {
+      await prisma.timeslot.update({
+        where: {
+          id: updatetimeSlot.id,
+        },
+        data: {
+          isAvailable: false,
+        },
+      });
+    } catch (error) {
+      if (error instanceof Error) {
+        throw new Error(
+          "Failed to update timeslot availability. " + error.message
+        );
+      }
+      throw error;
+    }
+
+    const date = updatetimeSlot.startTime.toISOString().split("T");
+    const trimmedTime = date[1].slice(0, 5);
+    const [hours, minutes] = trimmedTime.split(":").map(Number);
+    const period = hours >= 12 ? "PM" : "AM";
+    const formattedHours = hours % 12 || 12;
+    const formattedTime = `${formattedHours}:${minutes
+      .toString()
+      .padStart(2, "0")} ${period}`;
+
+    const messageVariables = {
+      1: Details.patient.name,
+      2: date[0],
+      3: formattedTime,
+    };
+
+    console.log("Message Variables:", messageVariables);
+
+    try {
+      await client.messages.create({
+        from: `whatsapp:${whatsappFrom}`,
+        to: `whatsapp:+91${Details.patient.phone}`,
+        contentSid: `${Details.doctor.sid_resch}`,
         contentVariables: JSON.stringify(messageVariables),
       });
 

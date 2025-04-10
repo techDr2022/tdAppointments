@@ -1,8 +1,8 @@
 "use server";
 import twilio from "twilio";
 import { z } from "zod"; // Recommended for input validation
-import { findAppointmentById } from "./CreateAppointment";
 import prisma from "@/lib/db";
+import { findAppointmentById } from "./CreateAppointment";
 
 // Validate environment variables
 const accountSid = process.env.TWILIO_ACCOUNT_SID;
@@ -34,6 +34,7 @@ export type AppointmentDetailsType = {
     id: number;
     name: string;
     website: string;
+    timings: Record<string, string[]>; // Accepts both type1 and type2
     whatsapp: string | null;
     sid_doctor?: string | null;
     sid_Ack?: string | null;
@@ -41,6 +42,7 @@ export type AppointmentDetailsType = {
     sid_Pcn?: string | null;
     sid_Rm?: string | null;
     sid_Fd?: string | null;
+    sid_resch?: string | null;
   };
   patient: {
     id: number;
@@ -81,7 +83,13 @@ export async function appointmentDetails(
 
     // Type guard to ensure the appointment exists
     if (!appointment) return null;
-    return appointment;
+    return {
+      ...appointment,
+      doctor: {
+        ...appointment.doctor,
+        timings: appointment.doctor.timings as Record<string, string[]>,
+      },
+    };
   } catch (err) {
     console.error(err);
     return null;

@@ -34,19 +34,21 @@ model Doctor {
   tdWebsite       String?
   name            String
   website         String        @unique
+  timings         Json?         // Changed to JSON to store object
   whatsapp        String?
   sid_doctor      String?
   sid_Ack         String?
   sid_Pcf         String?
+  sid_resch       String?
   sid_Pcn         String?
   sid_Rm          String?
   sid_Fd          String?
   qualifications  String?       // For EHR
   specialization  String?       // For EHR
   registrationNo  String?       // For EHR
-  type           DoctorType    @default(INDIVIDUAL)
-  clinicId       Int?          // Optional foreign key for Clinic
-  clinic         Clinic?       @relation(fields: [clinicId], references: [id], onDelete: SetNull)
+  type            DoctorType    @default(INDIVIDUAL)
+  clinicId        Int?          // Optional foreign key for Clinic
+  clinic          Clinic?       @relation(fields: [clinicId], references: [id], onDelete: SetNull)
   services        Service[]
   timeslots       Timeslot[]
   appointments    Appointment[]
@@ -54,6 +56,7 @@ model Doctor {
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
 }
+
 
 model Patient {
   id           Int           @id @default(autoincrement())

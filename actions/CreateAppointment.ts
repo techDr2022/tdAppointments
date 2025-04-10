@@ -1,5 +1,6 @@
 "use server";
 import prisma from "@/lib/db";
+import { Appointment } from "@/types/model";
 
 // Define the types for the function parameters
 interface CreateAppointmentParams {
@@ -91,22 +92,33 @@ export async function CreateAppointment({
   }
 }
 
-export async function findAppointmentById(appointmentId: number) {
+export async function findAppointmentById(id: number) {
   try {
     const appointment = await prisma.appointment.findUnique({
-      where: {
-        id: appointmentId, // The ID of the appointment you want to find
+      where: { id },
+      include: {
+        doctor: {
+          include: {
+            services: {
+              include: {
+                doctor: true,
+                appointments: true,
+              },
+            },
+            timeslots: true,
+            appointments: true,
+            ehrRecords: true,
+          },
+        },
+        patient: true,
+        timeslot: true,
+        service: true,
       },
     });
-
-    if (!appointment) {
-      console.log("Appointment not found");
-      return null;
-    }
-
-    return appointment;
-  } catch (error) {
-    console.error("Error fetching appointment:", error);
+    if (!appointment) return null;
+    return appointment as Appointment;
+  } catch (err) {
+    console.error(err);
     return null;
   }
 }
