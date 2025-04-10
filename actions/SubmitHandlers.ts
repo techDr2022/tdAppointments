@@ -1,7 +1,7 @@
 "use server";
 
 import { BMTAppointmentFormData } from "@/components/Hematologybmt";
-import { CreateAppointment } from "./CreateAppointment";
+import { CreateAppointment, findAppointmentById } from "./CreateAppointment";
 import { CreateTimeSlot } from "./CreateTimeslot";
 import { createPatient, findPatientByPhone } from "./patient";
 import { findDoctorById } from "./Doctor";
@@ -9,6 +9,7 @@ import { sendConfirmMessage, sendMessage } from "./SendMessage";
 import { AllAppointmentFormData } from "@/components/DrForms";
 import prisma from "@/lib/db";
 import { DrArunaEntFormProps } from "@/components/DrArunaEntForm";
+import { DoctorType } from "@/types/model";
 
 export async function SubmitHandlerBMT(data: BMTAppointmentFormData) {
   try {
@@ -107,8 +108,15 @@ export async function SubmitHandlerBMT(data: BMTAppointmentFormData) {
       throw new Error("Failed to create the appointment.");
     }
 
+    // Get the complete appointment with relations
+    const completeAppointment = await findAppointmentById(appointment.id);
+
+    if (!completeAppointment) {
+      throw new Error("Failed to retrieve the complete appointment.");
+    }
+
     // Send a message confirmation
-    const messageResult = await sendMessage(appointment);
+    const messageResult = await sendMessage(completeAppointment);
     if (!messageResult) {
       throw new Error("Failed to send the message.");
     }
@@ -206,8 +214,15 @@ export async function SubmitHandlerArunaEnt(data: DrArunaEntFormProps) {
       throw new Error("Failed to create the appointment.");
     }
 
+    // Get the complete appointment with relations
+    const completeAppointment = await findAppointmentById(appointment.id);
+
+    if (!completeAppointment) {
+      throw new Error("Failed to retrieve the complete appointment.");
+    }
+
     // Send a message confirmation
-    const messageResult = await sendMessage(appointment);
+    const messageResult = await sendMessage(completeAppointment);
     if (!messageResult) {
       throw new Error("Failed to send the message.");
     }
@@ -285,16 +300,23 @@ export async function SubmitHandlerAll(
       patientId: patient.id,
     });
 
+    // Get the complete appointment with relations
+    const completeAppointment = await findAppointmentById(appointment.id);
+
+    if (!completeAppointment) {
+      throw new Error("Failed to retrieve the complete appointment.");
+    }
+
     // Send a message confirmation
     if (type === "FORM") {
-      const messageResult = await sendMessage(appointment);
+      const messageResult = await sendMessage(completeAppointment);
       if (!messageResult) {
         throw new Error("Failed to send the message.");
       }
 
       return { success: true };
     } else {
-      const confirmResult = await sendConfirmMessage(appointment);
+      const confirmResult = await sendConfirmMessage(completeAppointment);
       if (!confirmResult) {
         throw new Error("Failed to send the confirmation message.");
       }
