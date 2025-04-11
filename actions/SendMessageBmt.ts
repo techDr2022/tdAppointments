@@ -343,9 +343,9 @@ export async function sendReminderMessageBMT(Details: AppointmentDetailsType) {
     if (Details.doctor.id === 28) {
       const messageVariables = {
         1: patient.name,
-        2: date[0],
-        3: formattedTime,
-        4: Details.location,
+        3: date[0],
+        4: formattedTime,
+        5: Details.location,
       };
       await client.messages.create({
         from: `whatsapp:${whatsappFrom}`,

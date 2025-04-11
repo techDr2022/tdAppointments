@@ -151,7 +151,7 @@ const BookingPageContent = () => {
         return (
           <DrForms
             doctorid={32}
-            imageSrc="/srinivas-logo.webp.webp"
+            imageSrc="/srinivas-logo.webp"
             starting="17:00"
             ending="21:00"
           />
