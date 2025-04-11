@@ -157,6 +157,42 @@ const BookingPageContent = () => {
           />
         );
 
+      case "DrSrikanth":
+        return (
+          <DrForms
+            doctorid={33}
+            imageSrc="/srikanth-logo.webp"
+            starting="11:00"
+            ending="21:00"
+          />
+        );
+      case "JJHospital":
+        return (
+          <DrForms
+            doctorid={34}
+            imageSrc="/jjhospital-logo.png"
+            starting="9:00"
+            ending="22:00"
+          />
+        );
+      case "NeumedClinic":
+        return (
+          <DrForms
+            doctorid={35}
+            imageSrc="/neumed-logo.jpg"
+            starting="9:00"
+            ending="21:00"
+          />
+        );
+      case "Shreemayukha":
+        return (
+          <DrForms
+            doctorid={36}
+            imageSrc="/shreemayukha-logo.jpg"
+            starting="9:00"
+            ending="21:00"
+          />
+        );
       default:
         return <AppointmentBookingFormSkeleton />;
     }
