@@ -55,6 +55,7 @@ export async function SendMessageBMT(Details: AppointmentDetailsType) {
       6: appointmentIdString,
       7: Details.location ?? "Not specified",
       8: patient.age ?? "Not specified",
+      9: appointmentIdString,
     };
 
     const patientMessageVariables = {
@@ -71,12 +72,12 @@ export async function SendMessageBMT(Details: AppointmentDetailsType) {
     await Promise.all([
       sendWhatsAppMessage(
         doctor.whatsapp || "",
-        "HX5d0a05c6723a9cda245d1788e0c0c4de",
+        "HX59dfae388d5178c1d6c849b66c488bcf",
         doctorMessageVariables
       ),
       sendWhatsAppMessage(
         patient.phone,
-        "HX98c879ded232b01bb5949151209f8339",
+        "HX1d7946a9587ed861200ed8e10c9c59ee",
         patientMessageVariables
       ),
     ]);
@@ -150,7 +151,7 @@ export async function SendConfirmMessageBMT(Details: AppointmentDetailsType) {
       await client.messages.create({
         from: `whatsapp:${whatsappFrom}`,
         to: `whatsapp:+91${patient.phone}`,
-        contentSid: "HX275a915decc673b06f7af503e0f9161e",
+        contentSid: "HX81c6da0e00e69ef5e622b92a413001d4",
         contentVariables: JSON.stringify(messageVariables),
       });
 
@@ -237,7 +238,7 @@ export async function SendCancelMessageBMT(Details: AppointmentDetailsType) {
     const cancelMessageResult = await client.messages.create({
       from: `whatsapp:${whatsappFrom}`,
       to: `whatsapp:+91${patient.phone}`,
-      contentSid: "HX0d0c28a7db25d26cf018dead1e37d4c5",
+      contentSid: "HXb8d0fe79bd7785dd5e0d44949be1cb80",
       contentVariables: JSON.stringify(messageVariables),
     });
 
@@ -295,7 +296,7 @@ export async function sendFeedbackMessageBMT(Details: AppointmentDetailsType) {
     await client.messages.create({
       from: `whatsapp:${whatsappFrom}`,
       to: `whatsapp:+91${Details.patient.phone}`,
-      contentSid: "HX1a9f43d13f53970c0ecee149a9e40d52",
+      contentSid: "HX740c08c04176e7b18e6e27b59d52bb87",
       contentVariables: JSON.stringify(messageVariables),
     });
     const FeedbackEmailProps = {
@@ -363,7 +364,7 @@ export async function sendReminderMessageBMT(Details: AppointmentDetailsType) {
       await client.messages.create({
         from: `whatsapp:${whatsappFrom}`,
         to: `whatsapp:+91${Details.patient.phone}`,
-        contentSid: "HXfc6792ecdb6eb6f72a76c4c2aee5b1a6",
+        contentSid: "HX2fbe699ca920cae5a3f17b1cd0de6cdd",
         contentVariables: JSON.stringify(messageVariables),
       });
     }
@@ -498,7 +499,7 @@ export async function SendRescheduleMessageBMT({
       await client.messages.create({
         from: `whatsapp:${whatsappFrom}`,
         to: `whatsapp:+91${Details.patient.phone}`,
-        contentSid: "HX38e75743e1684186053a0bded13b6f7b",
+        contentSid: "HX8f163931fcc2c5f89be448dc02785db2",
         contentVariables: JSON.stringify(messageVariables),
       });
 
