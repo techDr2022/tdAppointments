@@ -195,12 +195,14 @@ const BookingPageContent = () => {
         );
 
       case "DrSameerakota":
-        <DrForms
-          doctorid={37}
-          imageSrc="/sameerakota-logo.png"
-          starting="15:00"
-          ending="19:00"
-        />;
+        return (
+          <DrForms
+            doctorid={37}
+            imageSrc="/sameerakota-logo.png"
+            starting="15:00"
+            ending="19:00"
+          />
+        );
       default:
         return <AppointmentBookingFormSkeleton />;
     }
