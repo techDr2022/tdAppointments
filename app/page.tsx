@@ -193,6 +193,14 @@ const BookingPageContent = () => {
             ending="21:00"
           />
         );
+
+      case "Dr.Sameerakota":
+        <DrForms
+          doctorid={37}
+          imageSrc="/sameerakota-logo.png"
+          starting="15:00"
+          ending="19:00"
+        />;
       default:
         return <AppointmentBookingFormSkeleton />;
     }

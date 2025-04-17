@@ -322,7 +322,6 @@ export async function SubmitHandlerAll(
       }
       return { success: true };
     }
-    return { success: true };
   } catch (error) {
     console.error("Error in SubmitHandlerBMT:", error);
     return {
