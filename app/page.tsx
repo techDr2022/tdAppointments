@@ -194,7 +194,7 @@ const BookingPageContent = () => {
           />
         );
 
-      case "Dr.Sameerakota":
+      case "DrSameerakota":
         <DrForms
           doctorid={37}
           imageSrc="/sameerakota-logo.png"
