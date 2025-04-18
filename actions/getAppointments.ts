@@ -164,3 +164,81 @@ export const getDoctorAppointments = async (
     );
   }
 };
+
+export const getAllAppointments = async (): Promise<AppointmentResponse> => {
+  try {
+    // Get all doctors
+    const allDoctors = await prisma.doctor.findMany({
+      select: {
+        id: true,
+        name: true,
+      },
+    });
+
+    // Get all appointments
+    const appointments = await prisma.appointment.findMany({
+      include: {
+        doctor: true,
+        patient: true,
+        service: true,
+        timeslot: true,
+      },
+      orderBy: {
+        date: "desc",
+      },
+    });
+
+    // Format the appointments
+    const formattedAppointments: AppointmentDetails[] = appointments.map(
+      (appointment) => {
+        const startTime = new Date(appointment.timeslot.startTime);
+
+        // Format date
+        const formattedDate = startTime.toLocaleDateString("en-US", {
+          day: "2-digit",
+          month: "short",
+          year: "numeric",
+        });
+
+        // Format time
+        const formattedTime = startTime.toLocaleTimeString("en-IN", {
+          hour: "2-digit",
+          minute: "2-digit",
+          hour12: true,
+        });
+
+        return {
+          id: appointment.id,
+          name: appointment.patient.name,
+          age: appointment.patient.age,
+          phoneNumber: appointment.patient.phone,
+          location: appointment.location,
+          date: formattedDate,
+          doctor: appointment.doctor.name,
+          time: formattedTime,
+          treatment: appointment.service?.name || "N/A",
+          status: appointment.status as AppointmentStatus,
+        };
+      }
+    );
+
+    // Format doctors for the filter
+    const doctors: DoctorDetails[] = allDoctors.map((doctor) => ({
+      id: doctor.id,
+      name: doctor.name,
+    }));
+
+    return {
+      website: "admin", // Generic website identifier for admin panel
+      appointments: formattedAppointments,
+      doctors,
+    };
+  } catch (error) {
+    console.error("Error fetching all appointments:", error);
+    throw new Error(
+      error instanceof Error
+        ? error.message
+        : "Failed to retrieve appointments. Please try again."
+    );
+  }
+};

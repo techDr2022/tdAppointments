@@ -41,6 +41,11 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
   const navigation: NavigationItem[] = [
     { name: "Dashboard", href: "/admin/dashboard", icon: LayoutDashboard },
     { name: "Appointments", href: "/admin/appointments", icon: Calendar },
+    {
+      name: "All Appointments",
+      href: "/admin/all-appointments",
+      icon: Calendar,
+    },
     { name: "Patients", href: "/admin/patients", icon: Users },
     { name: "Doctors", href: "/admin/doctors", icon: User },
     { name: "Departments", href: "/admin/departments", icon: Building2 },

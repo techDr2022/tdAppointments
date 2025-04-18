@@ -1,8 +1,14 @@
-import { getDoctorAppointments } from "@/actions/getAppointments";
+import {
+  getDoctorAppointments,
+  getAllAppointments,
+} from "@/actions/getAppointments";
 import { auth } from "@/auth";
 import AppointmentsDashboard from "@/components/AppointmentDashboard";
 import RagasAppointmentsDashboard from "@/components/RagasClinicAppointments";
+import AdminAppointmentsDashboard from "@/components/AdminAppointmentsDashboard";
 import { redirect } from "next/navigation";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
 
 export default async function AdminAppointments() {
   // Get the request headers to check if it's a middleware request
@@ -16,7 +22,7 @@ export default async function AdminAppointments() {
     // Handle missing user ID
     if (!session) {
       console.error("No user ID found in session");
-      redirect("/admin-login");
+      redirect("/api/admin-login");
     }
 
     // Safely parse the doctor ID
@@ -25,9 +31,26 @@ export default async function AdminAppointments() {
         ? parseInt(session.user.id, 10)
         : session.user.id;
 
-    // Validate doctor ID
+    // Check if this is the special admin doctor (ID: 19)
+    if (doctorId === 19) {
+      // Fetch all appointments from all doctors
+      try {
+        const allAppointmentsData = await getAllAppointments();
+        // Ensure doctors array is present
+        const safeAppointmentsData = {
+          ...allAppointmentsData,
+          doctors: allAppointmentsData.doctors || [],
+        };
+        return (
+          <AdminAppointmentsDashboard initialData={safeAppointmentsData} />
+        );
+      } catch (fetchError) {
+        console.error("Error fetching all appointments:", fetchError);
+        return <div>Error loading appointments. Please try again later.</div>;
+      }
+    }
 
-    // Fetch appointments with error handling
+    // For other doctors, proceed with the regular flow
     let appointmentsData;
     try {
       if (doctorId && session.user.type)
@@ -44,6 +67,10 @@ export default async function AdminAppointments() {
     if (!appointmentsData) {
       return <div>No appointments found</div>;
     }
+
+    // Show "View All Appointments" button for clinic users
+    const showAllAppointmentsButton = session.user.type === "Clinic";
+
     if (session.user.clinicId) {
       if (parseInt(session.user.clinicId) === 2) {
         const safeAppointmentsData = {
@@ -51,12 +78,32 @@ export default async function AdminAppointments() {
           doctors: appointmentsData.doctors || [],
         };
         return (
-          <RagasAppointmentsDashboard initialData={safeAppointmentsData} />
+          <>
+            {showAllAppointmentsButton && (
+              <div className="flex justify-end p-4">
+                <Link href="/admin/all-appointments">
+                  <Button className="bg-blue-900">View All Appointments</Button>
+                </Link>
+              </div>
+            )}
+            <RagasAppointmentsDashboard initialData={safeAppointmentsData} />
+          </>
         );
       }
     }
 
-    return <AppointmentsDashboard initialData={appointmentsData} />;
+    return (
+      <>
+        {showAllAppointmentsButton && (
+          <div className="flex justify-end p-4">
+            <Link href="/admin/all-appointments">
+              <Button className="bg-blue-900">View All Appointments</Button>
+            </Link>
+          </div>
+        )}
+        <AppointmentsDashboard initialData={appointmentsData} />
+      </>
+    );
   } catch (error) {
     // Log the full error for debugging
     console.error("AdminAppointments Error:", error);
