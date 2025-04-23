@@ -3,8 +3,9 @@ import prisma from "@/lib/db"; // Import Prisma client
 // Server action to find a patient by their phone number
 export async function findPatientByPhone(phone: string) {
   try {
-    if (!/^\d{10}$/.test(phone)) {
-      throw new Error("Invalid phone number format");
+    // Only check if the phone is not empty
+    if (!phone) {
+      throw new Error("Phone number cannot be empty");
     }
 
     const patient = await prisma.patient.findFirst({
@@ -36,8 +37,9 @@ export async function createPatient(data: {
   email: string | null;
 }) {
   try {
-    if (!/^\d{10}$/.test(data.phone)) {
-      throw new Error("Invalid phone number format");
+    // Only check if the phone is not empty
+    if (!data.phone) {
+      throw new Error("Phone number cannot be empty");
     }
 
     if (isNaN(Number(data.age))) {

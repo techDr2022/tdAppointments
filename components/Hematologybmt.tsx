@@ -117,6 +117,7 @@ const Hematologybmt = () => {
   );
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [lastPollTime, setLastPollTime] = useState(Date.now());
+  const [countryCode, setCountryCode] = useState("+91");
   const POLL_INTERVAL = 3000; // 3 seconds
 
   // Location and service configurations
@@ -333,7 +334,13 @@ const Hematologybmt = () => {
     try {
       addPendingBooking(data.date, data.time);
 
-      const result = await SubmitHandlerBMT(data);
+      // Add country code to the phone number
+      const dataWithPrefix = {
+        ...data,
+        whatsapp: countryCode + data.whatsapp,
+      };
+
+      const result = await SubmitHandlerBMT(dataWithPrefix);
       if (result?.success) {
         setSubmitted(true);
       }
@@ -622,13 +629,41 @@ const Hematologybmt = () => {
             control={control}
             render={({ field }) => (
               <div className="relative">
-                <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-green-500" />
-                <input
-                  {...field}
-                  type="tel"
-                  placeholder="WhatsApp Number"
-                  className="w-full pl-10 pr-4 py-3 border-2 border-green-200 rounded-lg focus:outline-none focus:border-green-500 transition-colors text-black"
-                />
+                <div className="flex items-center">
+                  <div className="relative">
+                    <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-green-500 z-10" />
+                    <select
+                      className="appearance-none pl-10 pr-6 py-3 bg-white border-2 border-r-0 border-green-200 rounded-l-lg text-gray-700 focus:outline-none focus:border-green-500 min-w-[90px] font-medium"
+                      value={countryCode}
+                      onChange={(e) => setCountryCode(e.target.value)}
+                    >
+                      <option value="+91">+91</option>
+                      <option value="+1">+1</option>
+                      <option value="+44">+44</option>
+                      <option value="+61">+61</option>
+                      <option value="+971">+971</option>
+                      <option value="+65">+65</option>
+                      <option value="+60">+60</option>
+                      <option value="+966">+966</option>
+                      <option value="+974">+974</option>
+                    </select>
+                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2">
+                      <svg
+                        className="fill-current h-4 w-4 text-gray-500"
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 20 20"
+                      >
+                        <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" />
+                      </svg>
+                    </div>
+                  </div>
+                  <input
+                    {...field}
+                    type="tel"
+                    placeholder="WhatsApp Number"
+                    className="w-full py-3 px-4 border-2 border-green-200 rounded-r-lg focus:outline-none focus:border-green-500 transition-colors text-black"
+                  />
+                </div>
                 {errors?.whatsapp && (
                   <p className="text-red-500 text-xs mt-1">
                     {errors.whatsapp.message}
