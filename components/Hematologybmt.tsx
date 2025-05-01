@@ -178,6 +178,12 @@ const Hematologybmt = () => {
   const watchDate = watch("date");
   const watchTime = watch("time");
 
+  // Reset date and time when location changes
+  useEffect(() => {
+    setValue("date", null);
+    setValue("time", "");
+  }, [watchLocation, setValue]);
+
   // Dynamic time slots based on location
 
   const Services = [
@@ -413,12 +419,12 @@ const Hematologybmt = () => {
       // Check if the current date is in the past, is a Sunday, or is a Wednesday (only if location is Kukatpally)
       const isPastDate = dateIST.getTime() < todayIST.getTime();
       const isSunday = dateIST.getDay() === 0;
-      const isWednesday = location === "Kukatpally" && dateIST.getDay() === 3;
+      const isThursday = location === "Kukatpally" && dateIST.getDay() === 4;
 
       days.push({
         day,
         date: dateIST,
-        disabled: isPastDate || isSunday || isWednesday,
+        disabled: isPastDate || isSunday || isThursday,
       });
     }
 
