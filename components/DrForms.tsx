@@ -61,11 +61,13 @@ const DrForms = ({
   imageSrc,
   starting,
   ending,
+  blockedSlots = [],
 }: {
   doctorid: number;
   imageSrc: string;
   starting: string;
   ending: string;
+  blockedSlots?: { start: string; end: string }[];
 }) => {
   const [bookedAppointments, setBookedAppointments] = useState<{
     [date: string]: string[];
@@ -155,6 +157,19 @@ const DrForms = ({
         const time = `${hour.toString().padStart(2, "0")}:${minute
           .toString()
           .padStart(2, "0")}`;
+
+        // Check if the time slot falls within any blocked period
+        const isBlocked = blockedSlots.some(({ start, end }) => {
+          const slotTime = new Date(`2000-01-01T${time}`);
+          const blockStart = new Date(`2000-01-01T${start}`);
+          const blockEnd = new Date(`2000-01-01T${end}`);
+          return slotTime >= blockStart && slotTime < blockEnd;
+        });
+
+        // Skip blocked time slots
+        if (isBlocked) {
+          continue;
+        }
 
         // Format the time slot
         const formattedSlot = {

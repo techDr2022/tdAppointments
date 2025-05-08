@@ -203,6 +203,16 @@ const BookingPageContent = () => {
             ending="19:00"
           />
         );
+      case "dentalexcellence":
+        return (
+          <DrForms
+            doctorid={38}
+            imageSrc="/dental-excellence-logo.png"
+            starting="10:00"
+            ending="21:00"
+            blockedSlots={[{ start: "14:30", end: "16:00" }]}
+          />
+        );
       default:
         return <AppointmentBookingFormSkeleton />;
     }
