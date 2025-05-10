@@ -210,6 +210,16 @@ const BookingPageContent = () => {
             imageSrc="/dental-excellence-logo.png"
             starting="10:00"
             ending="21:00"
+            locations={[
+              {
+                name: "Basheerbhag",
+                doctors: [{ name: "Dr.Ashish Jain", id: 38 }],
+              },
+              {
+                name: "Miyapur",
+                doctors: [{ name: "Dr.Sri Priya", id: 39 }],
+              },
+            ]}
             blockedSlots={[{ start: "14:30", end: "16:00" }]}
           />
         );

@@ -35,6 +35,8 @@ const AppointmentSchema = z.object({
     .min(10, { message: "Check the number" }),
   date: z.date({ required_error: "Please select a date" }),
   time: z.string({ required_error: "Please select a time slot" }),
+  location: z.string().optional(),
+  doctorId: z.number().optional(),
 });
 
 export interface AllAppointmentFormData {
@@ -44,6 +46,8 @@ export interface AllAppointmentFormData {
   date: Date | null;
   time: string;
   reason?: string;
+  location?: string;
+  doctorId?: number;
 }
 
 interface BookedAppointments {
@@ -56,19 +60,33 @@ interface TimeSlot {
   ampm: string;
 }
 
+interface Location {
+  name: string;
+  doctors: {
+    name: string;
+    id: number;
+  }[];
+}
+
+interface DrFormsProps {
+  doctorid: number;
+  imageSrc: string;
+  starting: string;
+  ending: string;
+  blockedSlots?: { start: string; end: string }[];
+  locations?: Location[];
+}
+
 const DrForms = ({
   doctorid,
   imageSrc,
   starting,
   ending,
   blockedSlots = [],
-}: {
-  doctorid: number;
-  imageSrc: string;
-  starting: string;
-  ending: string;
-  blockedSlots?: { start: string; end: string }[];
-}) => {
+  locations = [],
+}: DrFormsProps) => {
+  const [selectedLocation, setSelectedLocation] = useState<string>("");
+  const [selectedDoctor, setSelectedDoctor] = useState<number>(doctorid);
   const [bookedAppointments, setBookedAppointments] = useState<{
     [date: string]: string[];
   }>({});
@@ -201,13 +219,32 @@ const DrForms = ({
   const onSubmit: SubmitHandler<AllAppointmentFormData> = async (data) => {
     if (!data.date) return;
 
+    // Validate location and doctor selection if locations are provided
+    if (locations.length > 0) {
+      if (!selectedLocation) {
+        toast.error("Please select a location");
+        return;
+      }
+      if (!selectedDoctor) {
+        toast.error("Please select a doctor");
+        return;
+      }
+    }
+
     try {
       addPendingBooking(data.date, data.time);
 
-      const result = await SubmitHandlerAll(data, "FORM", doctorid); // Call the server-side handler
+      // Use the selected doctor ID if locations are provided, otherwise use the default doctorid
+      const doctorIdToUse = locations.length > 0 ? selectedDoctor : doctorid;
+
+      const result = await SubmitHandlerAll(
+        { ...data, location: selectedLocation, doctorId: doctorIdToUse },
+        "FORM",
+        doctorIdToUse
+      );
 
       if (result?.success) {
-        setSubmitted(true); // Mark form as submitted
+        setSubmitted(true);
       } else {
         setPendingBookings((prev) => {
           const newSet = new Set(prev);
@@ -220,7 +257,7 @@ const DrForms = ({
       }
 
       // Refresh booked slots after submission
-      const newSlots = await BookedSlots(doctorid);
+      const newSlots = await BookedSlots(doctorIdToUse);
       if (newSlots) {
         const updatedAppointments = newSlots.reduce<BookedAppointments>(
           (acc, data) => {
@@ -234,8 +271,8 @@ const DrForms = ({
         setBookedAppointments((prev) => ({ ...prev, ...updatedAppointments }));
       }
     } catch (err) {
-      console.error("Error during form submission:", err); // Log error for debugging
-      toast.error("Something went wrong. Please try again."); // Generic error message
+      console.error("Error during form submission:", err);
+      toast.error("Something went wrong. Please try again.");
     }
   };
 
@@ -299,7 +336,9 @@ const DrForms = ({
       if (now - lastPollTime < POLL_INTERVAL) return;
 
       try {
-        const slotKeys = await BookedSlots(doctorid);
+        // Use the selected doctor ID if locations are provided, otherwise use the default doctorid
+        const doctorIdToUse = locations.length > 0 ? selectedDoctor : doctorid;
+        const slotKeys = await BookedSlots(doctorIdToUse);
 
         if (slotKeys && slotKeys.length > 0) {
           const updatedAppointments: BookedAppointments = slotKeys.reduce(
@@ -323,11 +362,10 @@ const DrForms = ({
 
     const intervalId = setInterval(pollSlots, POLL_INTERVAL);
 
-    // Cleanup function to clear the interval when component unmounts
     return () => {
       clearInterval(intervalId);
     };
-  }, [doctorid, lastPollTime]);
+  }, [doctorid, lastPollTime, locations.length, selectedDoctor]);
 
   if (submitted) {
     const submittedData = watch();
@@ -519,6 +557,77 @@ const DrForms = ({
         </h1>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          {/* Location Selection */}
+          {locations.length > 0 && (
+            <div className="relative">
+              <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-blue-500">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-5 w-5"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+              </div>
+              <select
+                value={selectedLocation}
+                onChange={(e) => {
+                  setSelectedLocation(e.target.value);
+                  setSelectedDoctor(0);
+                }}
+                className="w-full pl-10 pr-4 py-3 border-2 border-blue-200 rounded-lg focus:outline-none focus:border-blue-500 transition-colors text-black appearance-none"
+              >
+                <option value="">Select Location</option>
+                {locations.map((location) => (
+                  <option key={location.name} value={location.name}>
+                    {location.name}
+                  </option>
+                ))}
+              </select>
+              <div className="absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none">
+                <ChevronRight className="h-5 w-5 text-gray-400 rotate-90" />
+              </div>
+            </div>
+          )}
+
+          {/* Doctor Selection */}
+          {locations.length > 0 && selectedLocation && (
+            <div className="relative">
+              <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-blue-500">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-5 w-5"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                >
+                  <path d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" />
+                </svg>
+              </div>
+              <select
+                value={selectedDoctor}
+                onChange={(e) => setSelectedDoctor(Number(e.target.value))}
+                className="w-full pl-10 pr-4 py-3 border-2 border-blue-200 rounded-lg focus:outline-none focus:border-blue-500 transition-colors text-black appearance-none"
+              >
+                <option value="">Select Doctor</option>
+                {locations
+                  .find((loc) => loc.name === selectedLocation)
+                  ?.doctors.map((doctor) => (
+                    <option key={doctor.id} value={doctor.id}>
+                      {doctor.name}
+                    </option>
+                  ))}
+              </select>
+              <div className="absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none">
+                <ChevronRight className="h-5 w-5 text-gray-400 rotate-90" />
+              </div>
+            </div>
+          )}
+
           {/* Name Input */}
           <Controller
             name="name"
@@ -654,11 +763,23 @@ const DrForms = ({
           {/* Submit Button */}
           <button
             type="submit"
-            disabled={isSubmitting || !watchDate || !watchTime}
+            disabled={
+              isSubmitting ||
+              !watchDate ||
+              !watchTime ||
+              (locations.length > 0 && (!selectedLocation || !selectedDoctor))
+            }
             className={`
               w-full bg-blue-600 text-white px-6 py-3 rounded-full
               hover:bg-blue-700 transition-all duration-200
-              ${isSubmitting || !watchDate || !watchTime ? "opacity-50 cursor-not-allowed" : ""}
+              ${
+                isSubmitting ||
+                !watchDate ||
+                !watchTime ||
+                (locations.length > 0 && (!selectedLocation || !selectedDoctor))
+                  ? "opacity-50 cursor-not-allowed"
+                  : ""
+              }
             `}
           >
             {isSubmitting ? (
