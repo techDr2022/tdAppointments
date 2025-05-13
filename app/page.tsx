@@ -233,6 +233,15 @@ const BookingPageContent = () => {
             ending="20:30"
           />
         );
+      case "DrRakeshChava":
+        return (
+          <DrForms
+            doctorid={41}
+            starting="10:00"
+            ending="19:00"
+            imageSrc="/drrakeshchava-logo.webp"
+          />
+        );
       default:
         return <AppointmentBookingFormSkeleton />;
     }
