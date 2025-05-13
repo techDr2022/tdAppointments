@@ -223,6 +223,16 @@ const BookingPageContent = () => {
             blockedSlots={[{ start: "14:30", end: "16:00" }]}
           />
         );
+
+      case "CurisClinic":
+        return (
+          <DrForms
+            doctorid={40}
+            imageSrc="/curis-clinic-logo.png"
+            starting="18:00"
+            ending="20:30"
+          />
+        );
       default:
         return <AppointmentBookingFormSkeleton />;
     }
