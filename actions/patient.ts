@@ -35,6 +35,7 @@ export async function createPatient(data: {
   age: string;
   phone: string;
   email: string | null;
+  sex?: string;
 }) {
   try {
     // Only check if the phone is not empty
@@ -56,7 +57,8 @@ export async function createPatient(data: {
       if (
         existingPatient.name !== data.name ||
         existingPatient.age !== data.age ||
-        existingPatient.email !== data.email
+        existingPatient.email !== data.email ||
+        existingPatient.sex !== data.sex
       ) {
         const UpdatePatient = await prisma.patient.update({
           where: {
@@ -66,6 +68,7 @@ export async function createPatient(data: {
             name: data.name,
             age: data.age,
             email: data.email,
+            sex: data.sex,
           },
         });
         return UpdatePatient;
@@ -79,6 +82,7 @@ export async function createPatient(data: {
         age: data.age,
         phone: data.phone,
         email: data.email,
+        sex: data.sex,
       },
     });
 

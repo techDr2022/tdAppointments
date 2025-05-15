@@ -51,7 +51,8 @@ export async function SubmitHandlerBMT(data: BMTAppointmentFormData) {
       if (
         patient.name !== data.name ||
         patient.age !== data.age ||
-        patient.email !== data.email
+        patient.email !== data.email ||
+        patient.sex !== data.gender
       ) {
         const UpdatePatient = await prisma.patient.update({
           where: {
@@ -59,6 +60,7 @@ export async function SubmitHandlerBMT(data: BMTAppointmentFormData) {
           },
           data: {
             name: data.name,
+            sex: data.gender,
             age: data.age,
             email: data.email,
           },
@@ -72,6 +74,7 @@ export async function SubmitHandlerBMT(data: BMTAppointmentFormData) {
         age: data.age,
         phone: data.whatsapp,
         email: data.email,
+        sex: data.gender,
       });
     }
 

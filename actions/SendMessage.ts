@@ -50,6 +50,7 @@ export type AppointmentDetailsType = {
     age: string;
     phone: string;
     email: string | null;
+    sex: string | null;
   };
   service: {
     id: number;

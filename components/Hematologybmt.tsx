@@ -15,6 +15,7 @@ import {
   Stethoscope,
   Cake,
   Mail,
+  Users,
 } from "lucide-react";
 import { BookedSlots } from "@/actions/BookSlots";
 import Image from "next/image";
@@ -25,6 +26,9 @@ import AppointmentBookingFormSkeleton from "./AppointmentBookingFormSkeleton";
 const AppointmentSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters" }),
   email: z.string().email({ message: "Please enter a valid email address" }),
+  gender: z.enum(["Male", "Female", "Other"], {
+    errorMap: () => ({ message: "Please select gender" }),
+  }),
   age: z
     .string()
     .refine((val) => !isNaN(parseInt(val)), { message: "Age must be a number" })
@@ -90,6 +94,7 @@ const AppointmentSchema = z.object({
 export interface BMTAppointmentFormData {
   name: string;
   email: string;
+  gender: string;
   age: string;
   whatsapp: string;
   location: string;
@@ -165,6 +170,7 @@ const Hematologybmt = () => {
     defaultValues: {
       name: "",
       email: "",
+      gender: "",
       age: "",
       whatsapp: "",
       location: "",
@@ -463,6 +469,7 @@ const Hematologybmt = () => {
           </h2>
           <div className="space-y-2 text-gray-700 mb-6">
             <p>Name: {submittedData?.name || "N/A"}</p>
+            <p>Gender: {submittedData?.gender || "N/A"}</p>
             <p>Location: {submittedData?.location || "N/A"}</p>
             <p>Service: {submittedData?.service || "N/A"}</p>
             <p>
@@ -601,6 +608,56 @@ const Hematologybmt = () => {
                 {errors?.name && (
                   <p className="text-red-500 text-xs mt-1">
                     {errors.name.message}
+                  </p>
+                )}
+              </div>
+            )}
+          />
+
+          {/* Gender Selection */}
+          <Controller
+            name="gender"
+            control={control}
+            render={({ field }) => (
+              <div className="relative">
+                <Users className="absolute left-3 top-1/2 transform -translate-y-1/2 text-blue-500" />
+                <div className="w-full pl-10 pr-4 py-3 border-2 border-blue-200 rounded-lg focus-within:border-blue-500 transition-colors">
+                  <div className="flex items-center space-x-6">
+                    <label className="inline-flex items-center cursor-pointer">
+                      <input
+                        type="radio"
+                        {...field}
+                        value="Male"
+                        checked={field.value === "Male"}
+                        className="form-radio h-4 w-4 text-blue-600"
+                      />
+                      <span className="ml-2 text-gray-700">Male</span>
+                    </label>
+                    <label className="inline-flex items-center cursor-pointer">
+                      <input
+                        type="radio"
+                        {...field}
+                        value="Female"
+                        checked={field.value === "Female"}
+                        className="form-radio h-4 w-4 text-blue-600"
+                      />
+                      <span className="ml-2 text-gray-700">Female</span>
+                    </label>
+                    <label className="inline-flex items-center cursor-pointer">
+                      <input
+                        type="radio"
+                        {...field}
+                        value="Other"
+                        checked={field.value === "Other"}
+                        className="form-radio h-4 w-4 text-blue-600"
+                      />
+                      <span className="ml-2 text-gray-700">Other</span>
+                    </label>
+                  </div>
+                </div>
+                {errors?.gender && (
+                  <p className="text-red-500 text-xs mt-1">
+                    {errors.gender.message}
                   </p>
                 )}
               </div>

@@ -56,6 +56,7 @@ export async function SendMessageBMT(Details: AppointmentDetailsType) {
       7: Details.location ?? "Not specified",
       8: patient.age ?? "Not specified",
       9: appointmentIdString,
+      10: patient.sex ?? "Not specified",
     };
 
     const patientMessageVariables = {
@@ -72,7 +73,7 @@ export async function SendMessageBMT(Details: AppointmentDetailsType) {
     await Promise.all([
       sendWhatsAppMessage(
         doctor.whatsapp || "",
-        "HX59dfae388d5178c1d6c849b66c488bcf",
+        "HXaac6ca382df4621dc3e47eea0812c8f6",
         doctorMessageVariables
       ),
       sendWhatsAppMessage(
