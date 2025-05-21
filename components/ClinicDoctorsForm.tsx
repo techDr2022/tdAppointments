@@ -103,6 +103,25 @@ const clinics: Clinic[] = [
       },
     ],
   },
+  {
+    id: 4,
+    doctors: [
+      {
+        id: 46,
+        name: "Dr Pranavi Reddy",
+        imageSrc: "/neumed-logo.jpg",
+        startTime: "09:00",
+        endTime: "21:00",
+      },
+      {
+        id: 35,
+        name: "Dr.E.DHEEMANTH REDDY",
+        imageSrc: "/neumed-logo.jpg",
+        startTime: "9:00",
+        endTime: "21:00",
+      },
+    ],
+  },
 ];
 
 // Custom hook for handling booked slots

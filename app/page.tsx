@@ -176,14 +176,7 @@ const BookingPageContent = () => {
           />
         );
       case "NeumedClinic":
-        return (
-          <DrForms
-            doctorid={35}
-            imageSrc="/neumed-logo.jpg"
-            starting="9:00"
-            ending="21:00"
-          />
-        );
+        return <ClinicDrForms clinicId={4} />;
       case "Shreemayukha":
         return (
           <DrForms

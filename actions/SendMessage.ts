@@ -88,17 +88,13 @@ export async function appointmentDetails(
       return null;
     }
 
-    // Ensure doctor object exists and has timings
-    if (
-      !appointment.doctor ||
-      appointment.doctor.timings === null ||
-      appointment.doctor.timings === undefined
-    ) {
-      console.error(`Doctor information incomplete for appointment ID: ${id}`);
+    // Ensure doctor object exists
+    if (!appointment.doctor) {
+      console.error(`Doctor information missing for appointment ID: ${id}`);
       return null;
     }
 
-    // Return with safely cast timings
+    // Return with safely cast timings, providing empty object as default when timings is null/undefined
     return {
       ...appointment,
       doctor: {
@@ -156,7 +152,12 @@ export async function sendMessage_acknow_confirm(
     // Messages for doctor
     const appointmentIdString = Details.id.toString();
 
-    if (doctor.id == 20 || doctor.id == 27) {
+    if (
+      doctor.id == 20 ||
+      doctor.id == 27 ||
+      doctor.id == 46 ||
+      doctor.id == 35
+    ) {
       const doctorMessageVariables = {
         1: doctor.name,
         2: patient.name,
@@ -180,6 +181,7 @@ export async function sendMessage_acknow_confirm(
         5: doctor.name,
         6: Details.reason || "N/A",
       };
+
       await Promise.all([
         client.messages.create({
           from: `whatsapp:${whatsappFrom}`,
@@ -279,12 +281,14 @@ export async function sendMessage(appointment: Appointment) {
   try {
     console.log(`Sending message for appointment ID: ${appointment.id}`);
     const Details = await appointmentDetails(appointment.id);
+    console.log("Details", Details);
 
     if (Details) {
       if (appointment.doctorId == 1) {
         const result = SendMessageBMT(Details);
         return result;
       } else {
+        console.log("Details", Details);
         const result = await sendMessage_acknow_confirm(Details);
         return result;
       }
@@ -327,7 +331,12 @@ export async function SendConfirmMessageAll(Details: AppointmentDetailsType) {
 
     let messageVariables = {};
 
-    if (doctor.id == 20 || doctor.id == 27) {
+    if (
+      doctor.id == 20 ||
+      doctor.id == 27 ||
+      doctor.id == 46 ||
+      doctor.id == 35
+    ) {
       messageVariables = {
         1: patient.name,
         2: `${formatedDate}`,
@@ -362,7 +371,10 @@ export async function SendConfirmMessageAll(Details: AppointmentDetailsType) {
     // Send confirmation message
     console.log("timeSlotWithType", timeSlotWithType?.type);
     if (
-      (doctor.id === 20 || doctor.id === 27) &&
+      (doctor.id === 20 ||
+        doctor.id === 27 ||
+        doctor.id === 46 ||
+        doctor.id === 35) &&
       timeSlotWithType?.type === "MANUAL"
     ) {
       console.log("entered");
