@@ -244,7 +244,7 @@ const BookingPageContent = () => {
             imageSrc="/Kindle-logo.png"
           />
         );
-      case " drsruthireddy":
+      case "drsruthireddy":
         return (
           <DrForms
             doctorid={48}
