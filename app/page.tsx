@@ -244,6 +244,15 @@ const BookingPageContent = () => {
             imageSrc="/Kindle-logo.png"
           />
         );
+      case " drsruthireddy":
+        return (
+          <DrForms
+            doctorid={48}
+            starting="10:00"
+            ending="20:00"
+            imageSrc="/DrSruthiReddy.jpg"
+          />
+        );
 
       default:
         return <AppointmentBookingFormSkeleton />;
