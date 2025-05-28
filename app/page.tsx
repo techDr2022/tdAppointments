@@ -235,6 +235,16 @@ const BookingPageContent = () => {
             imageSrc="/drrakeshchava-logo.webp"
           />
         );
+      case "KindleClinics":
+        return (
+          <DrForms
+            doctorid={47}
+            starting="10:00"
+            ending="20:00"
+            imageSrc="/Kindle-logo.png"
+          />
+        );
+
       default:
         return <AppointmentBookingFormSkeleton />;
     }
