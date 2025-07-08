@@ -78,7 +78,16 @@ const RagasAppointmentsDashboard = ({
   const [appointments, setAppointments] = useState(initialData.appointments);
   const [isAddingAppointment, setIsAddingAppointment] = useState(false);
   const [newAppointment, setNewAppointment] = useState({
+    bookingType: "myself" as "myself" | "others",
+    relationship: "",
+    appointmentType: "initial" as
+      | "initial"
+      | "followup"
+      | "secondopinion"
+      | "others",
+    customAppointmentType: "",
     name: "",
+    gender: "male" as "male" | "female" | "other",
     age: "", // Add age field
     phoneNumber: "",
     date: new Date(),
@@ -193,11 +202,16 @@ const RagasAppointmentsDashboard = ({
       setIsAddingLoading(true); // Start loading
 
       const formData: AllAppointmentFormData = {
+        bookingType: newAppointment.bookingType,
+        relationship: newAppointment.relationship,
+        appointmentType: newAppointment.appointmentType,
+        customAppointmentType: newAppointment.customAppointmentType,
         name: newAppointment.name,
+        gender: newAppointment.gender,
+        age: newAppointment.age,
         whatsapp: newAppointment.phoneNumber,
         date: newAppointment.date,
         time: newAppointment.time,
-        age: newAppointment.age,
       };
 
       const result = await SubmitHandlerAll(
@@ -236,7 +250,12 @@ const RagasAppointmentsDashboard = ({
 
         // Reset the form
         setNewAppointment({
+          bookingType: "myself",
+          relationship: "",
+          appointmentType: "initial",
+          customAppointmentType: "",
           name: "",
+          gender: "male",
           age: "",
           phoneNumber: "",
           date: new Date(),
@@ -261,7 +280,12 @@ const RagasAppointmentsDashboard = ({
   const handleCancelAdd = () => {
     setIsAddingAppointment(false);
     setNewAppointment({
+      bookingType: "myself",
+      relationship: "",
+      appointmentType: "initial",
+      customAppointmentType: "",
       name: "",
+      gender: "male",
       age: "", // Reset age
       phoneNumber: "",
       date: new Date(),
@@ -416,7 +440,10 @@ const RagasAppointmentsDashboard = ({
                 <TableHead className="w-[30px]">
                   <input type="checkbox" className="rounded border-gray-300" />
                 </TableHead>
+                <TableHead className="text-xs">Booking Type</TableHead>
+                <TableHead className="text-xs">Appointment Type</TableHead>
                 <TableHead className="text-xs">Name</TableHead>
+                <TableHead className="text-xs">Gender</TableHead>
                 <TableHead className="text-xs">Age</TableHead>
                 <TableHead className="text-xs">Phone</TableHead>
                 {hasField.location && (
@@ -449,6 +476,52 @@ const RagasAppointmentsDashboard = ({
                     />
                   </TableCell>
                   <TableCell>
+                    <Select
+                      value={newAppointment.bookingType}
+                      onValueChange={(value) =>
+                        setNewAppointment({
+                          ...newAppointment,
+                          bookingType: value as "myself" | "others",
+                        })
+                      }
+                    >
+                      <SelectTrigger className="w-full text-sm">
+                        <SelectValue placeholder="Booking Type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="myself">For Myself</SelectItem>
+                        <SelectItem value="others">For Others</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </TableCell>
+                  <TableCell>
+                    <Select
+                      value={newAppointment.appointmentType}
+                      onValueChange={(value) =>
+                        setNewAppointment({
+                          ...newAppointment,
+                          appointmentType: value as
+                            | "initial"
+                            | "followup"
+                            | "secondopinion"
+                            | "others",
+                        })
+                      }
+                    >
+                      <SelectTrigger className="w-full text-sm">
+                        <SelectValue placeholder="Type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="initial">Initial</SelectItem>
+                        <SelectItem value="followup">Follow-up</SelectItem>
+                        <SelectItem value="secondopinion">
+                          Second Opinion
+                        </SelectItem>
+                        <SelectItem value="others">Others</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </TableCell>
+                  <TableCell>
                     <Input
                       value={newAppointment.name}
                       onChange={(e) =>
@@ -460,6 +533,26 @@ const RagasAppointmentsDashboard = ({
                       className="w-full text-sm"
                       placeholder="Enter name"
                     />
+                  </TableCell>
+                  <TableCell>
+                    <Select
+                      value={newAppointment.gender}
+                      onValueChange={(value) =>
+                        setNewAppointment({
+                          ...newAppointment,
+                          gender: value as "male" | "female" | "other",
+                        })
+                      }
+                    >
+                      <SelectTrigger className="w-full text-sm">
+                        <SelectValue placeholder="Gender" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="male">Male</SelectItem>
+                        <SelectItem value="female">Female</SelectItem>
+                        <SelectItem value="other">Other</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </TableCell>
                   <TableCell>
                     <Input
@@ -613,7 +706,16 @@ const RagasAppointmentsDashboard = ({
                         className="rounded border-gray-300"
                       />
                     </TableCell>
+                    <TableCell>
+                      <span className="text-xs text-gray-500">For Myself</span>
+                    </TableCell>
+                    <TableCell>
+                      <span className="text-xs text-gray-500">Initial</span>
+                    </TableCell>
                     <TableCell>{appointment.name}</TableCell>
+                    <TableCell>
+                      <span className="text-xs text-gray-500">N/A</span>
+                    </TableCell>
                     <TableCell>{appointment.age}</TableCell>
                     <TableCell>{appointment.phoneNumber}</TableCell>
                     {hasField.location && (
@@ -648,7 +750,7 @@ const RagasAppointmentsDashboard = ({
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={10} className="text-center py-4 text-sm">
+                  <TableCell colSpan={15} className="text-center py-4 text-sm">
                     No appointments found.
                   </TableCell>
                 </TableRow>

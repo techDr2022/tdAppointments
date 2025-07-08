@@ -361,6 +361,79 @@ const ClinicDrForms = ({ clinicId }: { clinicId: number }) => {
     },
   ];
 
+  const appointmentTypeOptions = [
+    {
+      value: "initial",
+      label: "Initial Consultation",
+      description: "First-time visit for new concerns",
+      icon: "🩺",
+      color: "text-blue-500",
+      bgColor: "bg-blue-50",
+      borderColor: "border-blue-200",
+      selectedBg: "bg-blue-100",
+    },
+    {
+      value: "followup",
+      label: "Follow-up Consultation",
+      description: "Continuing care for ongoing treatment",
+      icon: "🔄",
+      color: "text-green-500",
+      bgColor: "bg-green-50",
+      borderColor: "border-green-200",
+      selectedBg: "bg-green-100",
+    },
+    {
+      value: "secondopinion",
+      label: "Second Opinion",
+      description: "Seeking additional medical perspective",
+      icon: "💭",
+      color: "text-purple-500",
+      bgColor: "bg-purple-50",
+      borderColor: "border-purple-200",
+      selectedBg: "bg-purple-100",
+    },
+    {
+      value: "others",
+      label: "Others",
+      description: "Specify your specific consultation need",
+      icon: "📝",
+      color: "text-orange-500",
+      bgColor: "bg-orange-50",
+      borderColor: "border-orange-200",
+      selectedBg: "bg-orange-100",
+    },
+  ];
+
+  const genderOptions = [
+    {
+      value: "male",
+      label: "Male",
+      icon: "👨",
+      color: "text-blue-500",
+      bgColor: "bg-blue-50",
+      borderColor: "border-blue-200",
+      selectedBg: "bg-blue-100",
+    },
+    {
+      value: "female",
+      label: "Female",
+      icon: "👩",
+      color: "text-pink-500",
+      bgColor: "bg-pink-50",
+      borderColor: "border-pink-200",
+      selectedBg: "bg-pink-100",
+    },
+    {
+      value: "other",
+      label: "Other",
+      icon: "👤",
+      color: "text-gray-500",
+      bgColor: "bg-gray-50",
+      borderColor: "border-gray-200",
+      selectedBg: "bg-gray-100",
+    },
+  ];
+
   const getNamePlaceholder = () => {
     switch (watchBookingType) {
       case "myself":
@@ -418,10 +491,18 @@ const ClinicDrForms = ({ clinicId }: { clinicId: number }) => {
             (values.bookingType !== "others" || values.relationship)
         );
       case 2:
-        return Boolean(values.doctorId);
+        return Boolean(
+          values.appointmentType &&
+            (values.appointmentType !== "others" ||
+              values.customAppointmentType)
+        );
       case 3:
-        return Boolean(values.name && values.age && values.whatsapp);
+        return Boolean(values.doctorId);
       case 4:
+        return Boolean(
+          values.name && values.gender && values.age && values.whatsapp
+        );
+      case 5:
         return Boolean(values.date && values.time);
       default:
         return true;
@@ -923,8 +1004,97 @@ const ClinicDrForms = ({ clinicId }: { clinicId: number }) => {
             </div>
           )}
 
-          {/* Step 2: Doctor Selection */}
+          {/* Step 2: Appointment Type Selection */}
           {currentStep === 2 && (
+            <div className="space-y-4 animate-fadeIn">
+              <Controller
+                name="appointmentType"
+                control={control}
+                render={({ field }) => (
+                  <div className="grid grid-cols-1 gap-3">
+                    {appointmentTypeOptions.map((option) => {
+                      const isSelected = field.value === option.value;
+                      return (
+                        <button
+                          key={option.value}
+                          type="button"
+                          onClick={() => {
+                            field.onChange(option.value);
+                            if (option.value !== "others") {
+                              setValue("customAppointmentType", "");
+                            }
+                          }}
+                          className={`
+                            p-4 rounded-xl border-2 transition-all duration-200 text-left transform hover:scale-[1.02]
+                            ${
+                              isSelected
+                                ? `${option.selectedBg} ${option.borderColor} border-opacity-100 shadow-md`
+                                : `${option.bgColor} ${option.borderColor} border-opacity-50 hover:border-opacity-100 hover:shadow-sm`
+                            }
+                          `}
+                        >
+                          <div className="flex items-center space-x-3">
+                            <div
+                              className={`p-3 rounded-lg ${option.bgColor} text-2xl`}
+                            >
+                              {option.icon}
+                            </div>
+                            <div className="flex-1">
+                              <h4 className="font-semibold text-gray-800">
+                                {option.label}
+                              </h4>
+                              <p className="text-sm text-gray-600">
+                                {option.description}
+                              </p>
+                            </div>
+                            {isSelected && (
+                              <div className="w-3 h-3 rounded-full bg-gradient-to-r from-blue-500 to-green-500"></div>
+                            )}
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              />
+              {errors.appointmentType && (
+                <p className="text-red-500 text-xs text-center">
+                  {errors.appointmentType.message}
+                </p>
+              )}
+
+              {/* Custom Appointment Type Field for "Others" */}
+              {watchAppointmentType === "others" && (
+                <div className="mt-4 animate-fadeIn">
+                  <Controller
+                    name="customAppointmentType"
+                    control={control}
+                    render={({ field }) => (
+                      <div className="relative">
+                        <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-orange-500 text-lg">
+                          📝
+                        </div>
+                        <input
+                          {...field}
+                          type="text"
+                          placeholder="Please specify the type of appointment"
+                          className="w-full pl-10 pr-4 py-3 border-2 border-orange-200 rounded-lg focus:outline-none focus:border-orange-500 transition-colors text-black"
+                        />
+                        {errors.customAppointmentType && (
+                          <p className="text-red-500 text-xs mt-1">
+                            {errors.customAppointmentType.message}
+                          </p>
+                        )}
+                      </div>
+                    )}
+                  />
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Step 3: Doctor Selection */}
+          {currentStep === 3 && (
             <div className="space-y-4 animate-fadeIn">
               <div className="grid grid-cols-1 gap-3">
                 {doctors.map((doctor) => (
@@ -959,8 +1129,8 @@ const ClinicDrForms = ({ clinicId }: { clinicId: number }) => {
             </div>
           )}
 
-          {/* Step 3: Personal Details */}
-          {currentStep === 3 && (
+          {/* Step 4: Personal Details */}
+          {currentStep === 4 && (
             <div className="space-y-4 animate-fadeIn">
               {/* Name Input */}
               <Controller
@@ -978,6 +1148,52 @@ const ClinicDrForms = ({ clinicId }: { clinicId: number }) => {
                     {errors.name && (
                       <p className="text-red-500 text-xs mt-1">
                         {errors.name.message}
+                      </p>
+                    )}
+                  </div>
+                )}
+              />
+
+              {/* Gender Selection */}
+              <Controller
+                name="gender"
+                control={control}
+                render={({ field }) => (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-3">
+                      Gender
+                    </label>
+                    <div className="grid grid-cols-3 gap-3">
+                      {genderOptions.map((option) => {
+                        const isSelected = field.value === option.value;
+                        return (
+                          <button
+                            key={option.value}
+                            type="button"
+                            onClick={() => field.onChange(option.value)}
+                            className={`
+                              p-3 rounded-lg border-2 transition-all duration-200 text-center transform hover:scale-[1.02]
+                              ${
+                                isSelected
+                                  ? `${option.selectedBg} ${option.borderColor} border-opacity-100 shadow-md`
+                                  : `${option.bgColor} ${option.borderColor} border-opacity-50 hover:border-opacity-100 hover:shadow-sm`
+                              }
+                            `}
+                          >
+                            <div className="text-2xl mb-1">{option.icon}</div>
+                            <div className="text-sm font-medium text-gray-800">
+                              {option.label}
+                            </div>
+                            {isSelected && (
+                              <div className="w-2 h-2 rounded-full bg-gradient-to-r from-blue-500 to-green-500 mx-auto mt-1"></div>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    {errors.gender && (
+                      <p className="text-red-500 text-xs mt-1 text-center">
+                        {errors.gender.message}
                       </p>
                     )}
                   </div>
@@ -1030,8 +1246,8 @@ const ClinicDrForms = ({ clinicId }: { clinicId: number }) => {
             </div>
           )}
 
-          {/* Step 4: Date and Time Selection */}
-          {currentStep === 4 && (
+          {/* Step 5: Date and Time Selection */}
+          {currentStep === 5 && (
             <div className="space-y-4 animate-fadeIn">
               <div className="grid grid-cols-2 gap-3">
                 <button
@@ -1124,8 +1340,8 @@ const ClinicDrForms = ({ clinicId }: { clinicId: number }) => {
             </div>
           )}
 
-          {/* Step 5: Confirmation */}
-          {currentStep === 5 && (
+          {/* Step 6: Confirmation */}
+          {currentStep === 6 && (
             <div className="space-y-4 animate-fadeIn">
               <div className="bg-gray-50 rounded-lg p-4 space-y-3">
                 <h3 className="font-semibold text-gray-800 border-b pb-2">
@@ -1143,6 +1359,20 @@ const ClinicDrForms = ({ clinicId }: { clinicId: number }) => {
                   </div>
 
                   <div className="flex justify-between">
+                    <span className="text-gray-600">Appointment Type:</span>
+                    <span className="font-medium">
+                      {watchAppointmentType === "initial" &&
+                        "Initial Consultation"}
+                      {watchAppointmentType === "followup" &&
+                        "Follow-up Consultation"}
+                      {watchAppointmentType === "secondopinion" &&
+                        "Second Opinion"}
+                      {watchAppointmentType === "others" &&
+                        (watch("customAppointmentType") || "Other")}
+                    </span>
+                  </div>
+
+                  <div className="flex justify-between">
                     <span className="text-gray-600">Doctor:</span>
                     <span className="font-medium">
                       {doctors.find((d) => d.id === selectedDoctorId)?.name ||
@@ -1154,6 +1384,15 @@ const ClinicDrForms = ({ clinicId }: { clinicId: number }) => {
                     <span className="text-gray-600">Patient Name:</span>
                     <span className="font-medium">
                       {watch("name") || "N/A"}
+                    </span>
+                  </div>
+
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Gender:</span>
+                    <span className="font-medium">
+                      {watchGender === "male" && "Male"}
+                      {watchGender === "female" && "Female"}
+                      {watchGender === "other" && "Other"}
                     </span>
                   </div>
 
