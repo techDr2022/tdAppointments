@@ -17,15 +17,14 @@ export async function sendFeedbackMessageAll(Details: AppointmentDetailsType) {
   try {
     const messageVariables = {
       1: Details.patient.name,
+      2: Details.doctor.feedback_link,
     };
-    if(Details.doctor.sid_Fd){
     await client.messages.create({
       from: `whatsapp:${whatsappFrom}`,
       to: `whatsapp:+91${Details.patient.phone}`,
-      contentSid: `${Details.doctor.sid_Fd}`,
+      contentSid: "HX82af6b6cc9f95e2d235cc5308d8611c6",
       contentVariables: JSON.stringify(messageVariables),
     });
-  }
     return true;
   } catch (err) {
     console.error(err);
@@ -50,14 +49,15 @@ export async function sendReminderMessageAll(Details: AppointmentDetailsType) {
       .toString()
       .padStart(2, "0")} ${period}`;
     const messageVariables = {
-      1: patient.name,
-      2: date[0],
-      3: formattedTime,
+      1: Details.doctor.name,
+      2: patient.name,
+      3: date[0],
+      4: formattedTime,
     };
     await client.messages.create({
       from: `whatsapp:${whatsappFrom}`,
       to: `whatsapp:+91${Details.patient.phone}`,
-      contentSid: `${Details.doctor.sid_Rm}`,
+      contentSid: "HX5297730bd5abeec905c58d63765a017f",
       contentVariables: JSON.stringify(messageVariables),
     });
 

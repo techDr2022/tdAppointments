@@ -46,6 +46,9 @@ model Doctor {
   qualifications  String?       // For EHR
   specialization  String?       // For EHR
   registrationNo  String?       // For EHR
+  image_slug      String?       // Image slug for doctor's profile picture
+  feedback_link   String?       // Link for patient feedback/reviews
+  map_location    String?       // Google Maps or location link
   type            DoctorType    @default(INDIVIDUAL)
   clinicId        Int?          // Optional foreign key for Clinic
   clinic          Clinic?       @relation(fields: [clinicId], references: [id], onDelete: SetNull)
@@ -63,33 +66,41 @@ model Patient {
   name         String
   age          String
   email        String?
-  phone        String        @unique
-  sex          String?       // For EHR
+  phone        String
+  sex          String?       // Male, Female, Other
+  relationship String?       // Relationship when booking for others (e.g., Father, Mother, Friend)
   appointments Appointment[]
   ehrRecords   EhrRecord[]
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
+
+  @@unique([relationship, name, phone])
 }
 
 model Appointment {
-  id             Int              @id @default(autoincrement())
-  date           DateTime
-  status         String           @default("PENDING")
-  location       String?
-  doctorId       Int
-  patientId      Int
-  serviceId      Int?
-  reason       String?
-  timeslotId     Int
-  ehrRecord      EhrRecord?
-  doctor         Doctor           @relation(fields: [doctorId], references: [id], onDelete: Cascade)
-  patient        Patient          @relation(fields: [patientId], references: [id], onDelete: Cascade)
-  service        Service?         @relation(fields: [serviceId], references: [id], onDelete: Cascade)
-  timeslot       Timeslot         @relation(fields: [timeslotId], references: [id])
-  appointmentJob AppointmentJobs?
-  createdAt      DateTime         @default(now())
-  updatedAt      DateTime         @updatedAt
+  id                     Int              @id @default(autoincrement())
+  date                   DateTime
+  status                 String           @default("PENDING")
+  location               String?
+  doctorId               Int
+  patientId              Int
+  serviceId              Int?
+  reason                 String?
+  timeslotId             Int
+  appointmentType        String?          // initial, followup, secondopinion, others
+  customAppointmentType  String?          // Custom type when "others" is selected
+  bookingType            String?          // myself, others
+  relationship           String?          // Relationship when booking for others
+  ehrRecord              EhrRecord?
+  doctor                 Doctor           @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+  patient                Patient          @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  service                Service?         @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  timeslot               Timeslot         @relation(fields: [timeslotId], references: [id])
+  appointmentJob         AppointmentJobs?
+  createdAt              DateTime         @default(now())
+  updatedAt              DateTime         @updatedAt
 }
+
 
 model Service {
   id           Int           @id @default(autoincrement())

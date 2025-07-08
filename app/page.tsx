@@ -1,15 +1,19 @@
 "use client";
 import { Suspense } from "react";
 import { useSearchParams } from "next/navigation";
-import AppointmentBookingFormSkeleton from "@/components/AppointmentBookingFormSkeleton";
+import ServiceContactForm from "@/components/ServiceContactForm";
 import Hematologybmt from "@/components/Hematologybmt";
 import DrForms from "../components/DrForms";
 import ClinicDrForms from "@/components/ClinicDoctorsForm";
 import DrArunaEntForm from "@/components/DrArunaEntForm";
+import AppointmentBookingFormSkeleton from "@/components/AppointmentBookingFormSkeleton";
 
 const BookingPageContent = () => {
   const searchParams = useSearchParams();
   const doctor = searchParams.get("doctor");
+  if (!doctor) {
+    return <ServiceContactForm />;
+  }
 
   const renderDoctorComponent = () => {
     switch (doctor) {
@@ -166,7 +170,7 @@ const BookingPageContent = () => {
             ending="21:00"
           />
         );
-      case "JJHospital":
+      case " ":
         return (
           <DrForms
             doctorid={34}
@@ -255,7 +259,7 @@ const BookingPageContent = () => {
         );
 
       default:
-        return <AppointmentBookingFormSkeleton />;
+        return <ServiceContactForm />;
     }
   };
 

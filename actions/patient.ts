@@ -36,6 +36,7 @@ export async function createPatient(data: {
   phone: string;
   email: string | null;
   sex?: string;
+  relationship?: string;
 }) {
   try {
     // Only check if the phone is not empty
@@ -47,35 +48,38 @@ export async function createPatient(data: {
       throw new Error("Age must be a valid number");
     }
 
+    // Check for existing patient with the same relationship, name, and phone combination
     const existingPatient = await prisma.patient.findFirst({
       where: {
+        relationship: data.relationship ?? null,
+        name: data.name,
         phone: data.phone,
       },
     });
 
     if (existingPatient) {
+      // If patient exists with same relationship, name, phone - update other fields if different
       if (
-        existingPatient.name !== data.name ||
         existingPatient.age !== data.age ||
         existingPatient.email !== data.email ||
         existingPatient.sex !== data.sex
       ) {
-        const UpdatePatient = await prisma.patient.update({
+        const updatedPatient = await prisma.patient.update({
           where: {
-            phone: existingPatient.phone,
+            id: existingPatient.id,
           },
           data: {
-            name: data.name,
             age: data.age,
             email: data.email,
             sex: data.sex,
           },
         });
-        return UpdatePatient;
+        return updatedPatient;
       }
       return existingPatient;
     }
 
+    // Create new patient if no existing patient found with same relationship, name, phone
     const newPatient = await prisma.patient.create({
       data: {
         name: data.name,
@@ -83,6 +87,7 @@ export async function createPatient(data: {
         phone: data.phone,
         email: data.email,
         sex: data.sex,
+        relationship: data.relationship ?? null,
       },
     });
 

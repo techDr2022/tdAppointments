@@ -8,6 +8,9 @@ export type ContactForm = {
   businessType: string;
   preferredCallTime: string;
   requirements: string;
+  requestType?: "NEW_CONSULTATION" | "RESCHEDULE";
+  originalCallTime?: string;
+  message?: string;
 };
 
 export async function sendMessageContact(

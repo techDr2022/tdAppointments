@@ -12,6 +12,10 @@ interface CreateAppointmentParams {
   timeslotId: number;
   reason?: string;
   type: "MANUAL" | "FORM";
+  appointmentType?: string; // initial, followup, secondopinion, others
+  customAppointmentType?: string; // Custom type when "others" is selected
+  bookingType?: string; // myself, others
+  relationship?: string; // Relationship when booking for others
 }
 
 export async function CreateAppointment({
@@ -23,6 +27,10 @@ export async function CreateAppointment({
   timeslotId,
   reason,
   type,
+  appointmentType,
+  customAppointmentType,
+  bookingType,
+  relationship,
 }: CreateAppointmentParams) {
   try {
     // Validate required fields
@@ -76,6 +84,10 @@ export async function CreateAppointment({
         reason: reason || null,
         timeslotId,
         status: "PENDING", // Default status
+        appointmentType: appointmentType || null,
+        customAppointmentType: customAppointmentType || null,
+        bookingType: bookingType || null,
+        relationship: relationship || null,
       },
     });
 
@@ -116,7 +128,7 @@ export async function findAppointmentById(id: number) {
       },
     });
     if (!appointment) return null;
-    return appointment as Appointment;
+    return appointment as unknown as Appointment;
   } catch (err) {
     console.error(err);
     return null;

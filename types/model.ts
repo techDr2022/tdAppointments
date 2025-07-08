@@ -36,6 +36,9 @@ export interface Doctor {
   qualifications?: string | null;
   specialization?: string | null;
   registrationNo?: string | null;
+  image_slug?: string | null; // Image slug for doctor's profile picture
+  feedback_link?: string | null; // Link for patient feedback/reviews
+  map_location?: string | null; // Google Maps or location link
   type: DoctorType;
   clinicId?: number | null;
   clinic?: Clinic | null;
@@ -54,6 +57,7 @@ export interface Patient {
   email?: string | null;
   phone: string;
   sex?: string | null;
+  relationship?: string | null; // Relationship when booking for others (e.g., Father, Mother, Friend)
   appointments: Appointment[];
   ehrRecords: EhrRecord[];
   createdAt: Date;
@@ -70,6 +74,10 @@ export interface Appointment {
   patientId: number;
   serviceId?: number | null;
   timeslotId: number;
+  appointmentType?: string | null; // initial, followup, secondopinion, others
+  customAppointmentType?: string | null; // Custom type when "others" is selected
+  bookingType?: string | null; // myself, others
+  relationship?: string | null;
   doctor: Doctor;
   patient: Patient;
   service?: Service | null;

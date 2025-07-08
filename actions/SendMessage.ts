@@ -43,6 +43,9 @@ export type AppointmentDetailsType = {
     sid_Rm?: string | null;
     sid_Fd?: string | null;
     sid_resch?: string | null;
+    image_slug?: string | null; // Image slug for doctor's profile picture
+    feedback_link?: string | null; // Link for patient feedback/reviews
+    map_location?: string | null; // Google Maps or location link
   };
   patient: {
     id: number;
@@ -51,6 +54,7 @@ export type AppointmentDetailsType = {
     phone: string;
     email: string | null;
     sex: string | null;
+    relationship: string | null; // Added relationship field
   };
   service: {
     id: number;
@@ -66,6 +70,10 @@ export type AppointmentDetailsType = {
   status: string;
   location?: string | null;
   reason?: string | null;
+  appointmentType?: string | null; // initial, followup, secondopinion, others
+  customAppointmentType?: string | null; // Custom type when "others" is selected
+  bookingType?: string | null; // myself, others
+  relationship?: string | null; // Relationship when booking for others
 };
 
 export async function appointmentDetails(
@@ -182,10 +190,22 @@ export async function sendMessage_acknow_confirm(
         6: Details.reason || "N/A",
       };
 
+      // Format doctor WhatsApp number properly for specific doctors
+      const doctorWhatsApp = doctor.whatsapp?.startsWith("+")
+        ? doctor.whatsapp
+        : doctor.whatsapp?.startsWith("91")
+          ? `+${doctor.whatsapp}`
+          : `+91${doctor.whatsapp}`;
+
+      console.log(
+        "Doctor WhatsApp (formatted for specific doctors):",
+        doctorWhatsApp
+      );
+
       await Promise.all([
         client.messages.create({
           from: `whatsapp:${whatsappFrom}`,
-          to: `whatsapp:${doctor.whatsapp}`,
+          to: `whatsapp:${doctorWhatsApp}`,
           contentSid: `${doctor.sid_doctor}`,
           contentVariables: JSON.stringify(doctorMessageVariables),
         }),
@@ -217,10 +237,23 @@ export async function sendMessage_acknow_confirm(
         4: `${formattedTime}`,
         5: Details.location || "N/A",
       };
+
+      // Format doctor WhatsApp number properly for doctor ID 28
+      const doctorWhatsApp28 = doctor.whatsapp?.startsWith("+")
+        ? doctor.whatsapp
+        : doctor.whatsapp?.startsWith("91")
+          ? `+${doctor.whatsapp}`
+          : `+91${doctor.whatsapp}`;
+
+      console.log(
+        "Doctor WhatsApp (formatted for doctor 28):",
+        doctorWhatsApp28
+      );
+
       await Promise.all([
         client.messages.create({
           from: `whatsapp:${whatsappFrom}`,
-          to: `whatsapp:${doctor.whatsapp}`,
+          to: `whatsapp:${doctorWhatsApp28}`,
           contentSid: `${doctor.sid_doctor}`,
           contentVariables: JSON.stringify(doctorMessageVariables),
         }),
@@ -236,37 +269,87 @@ export async function sendMessage_acknow_confirm(
       const doctorMessageVariables = {
         1: doctor.name,
         2: patient.name,
-        3: patient.age,
-        4: `${formatedDate}`,
-        5: `${formattedTime}`,
-        6: patient.phone,
-        8: appointmentIdString,
-        9: appointmentIdString,
-        7: appointmentIdString,
+        3: patient.age || "N/A",
+        4: patient.sex || "N/A",
+        5: `${formatedDate}`,
+        6: `${formattedTime}`,
+        7: patient.phone,
+        8: Details.bookingType == "others" ? Details.relationship : "myself",
+        9:
+          Details.appointmentType == "others"
+            ? Details.customAppointmentType
+            : Details.appointmentType || "N/A",
+        10: Details.doctor.image_slug || "N/A",
+        11: appointmentIdString,
+        12: appointmentIdString,
+        13: appointmentIdString,
       };
 
       // Messages for patient
       const patientMessageVariables = {
         1: patient.name,
-        2: patient.name,
-        3: `${formatedDate}`,
-        4: `${formattedTime}`,
+        2: Details.doctor.name,
+        3: patient.name,
+        4: Details.patient.age || "N/A",
+        5: Details.patient.sex || "N/A",
+        6: `${formatedDate}`,
+        7: `${formattedTime}`,
+        8: Details.doctor.image_slug || "N/A",
       };
 
-      await Promise.all([
-        client.messages.create({
-          from: `whatsapp:${whatsappFrom}`,
-          to: `whatsapp:${doctor.whatsapp}`,
-          contentSid: `${doctor.sid_doctor}`,
-          contentVariables: JSON.stringify(doctorMessageVariables),
-        }),
-        client.messages.create({
-          from: `whatsapp:${whatsappFrom}`,
-          to: `whatsapp:+91${patient.phone}`,
-          contentSid: `${doctor.sid_Ack}`,
-          contentVariables: JSON.stringify(patientMessageVariables),
-        }),
-      ]);
+      console.log("doctorMessageVariables", doctorMessageVariables);
+      console.log("patientMessageVariables", patientMessageVariables);
+
+      // Debug logging for WhatsApp numbers
+      console.log("Doctor WhatsApp (raw):", doctor.whatsapp);
+      console.log("Patient phone (raw):", patient.phone);
+
+      // Validate doctor WhatsApp number exists
+      if (!doctor.whatsapp) {
+        console.error("Doctor WhatsApp number is missing or null");
+        throw new Error(
+          `Doctor WhatsApp number is missing for doctor ID: ${doctor.id}`
+        );
+      }
+
+      // Format doctor WhatsApp number properly
+      const doctorWhatsApp = doctor.whatsapp.startsWith("+")
+        ? doctor.whatsapp
+        : doctor.whatsapp.startsWith("91")
+          ? `+${doctor.whatsapp}`
+          : `+91${doctor.whatsapp}`;
+
+      console.log("Doctor WhatsApp (formatted):", doctorWhatsApp);
+      console.log("Patient WhatsApp (formatted):", `+91${patient.phone}`);
+
+      try {
+        const [doctorMessageResult, patientMessageResult] = await Promise.all([
+          client.messages.create({
+            from: `whatsapp:${whatsappFrom}`,
+            to: `whatsapp:${doctorWhatsApp}`,
+            contentSid: "HXe23d709fc9fd60f79752a36a7acf9d00",
+            contentVariables: JSON.stringify(doctorMessageVariables),
+          }),
+          client.messages.create({
+            from: `whatsapp:${whatsappFrom}`,
+            to: `whatsapp:+91${patient.phone}`,
+            contentSid: "HX837b8cda88e86a652e04bc08cab17ff6",
+            contentVariables: JSON.stringify(patientMessageVariables),
+          }),
+        ]);
+
+        console.log(
+          "Doctor message sent successfully:",
+          doctorMessageResult.sid
+        );
+        console.log(
+          "Patient message sent successfully:",
+          patientMessageResult.sid
+        );
+      } catch (messageError) {
+        console.error("Error sending messages:", messageError);
+        throw messageError;
+      }
 
       return true;
     }
@@ -363,8 +446,13 @@ export async function SendConfirmMessageAll(Details: AppointmentDetailsType) {
     } else {
       messageVariables = {
         1: patient.name,
-        2: `${formatedDate}`,
-        3: `${formattedTime}`,
+        2: Details.doctor.name,
+        3: patient.name,
+        4: `${formatedDate}`,
+        5: `${formattedTime}`,
+        6: Details.doctor.map_location || "N/A",
+        7: Details.doctor.website,
+        8: Details.doctor.whatsapp,
       };
     }
 
@@ -391,10 +479,11 @@ export async function SendConfirmMessageAll(Details: AppointmentDetailsType) {
         contentVariables: JSON.stringify(messageVariables),
       });
     } else {
+      //single location
       await client.messages.create({
         from: `whatsapp:${whatsappFrom}`,
         to: `whatsapp:+91${patient.phone}`,
-        contentSid: `${doctor.sid_Pcf}`,
+        contentSid: "HX6b5f279ff7bd065b59c53d8f11f2a45e",
         contentVariables: JSON.stringify(messageVariables),
       });
     }
@@ -476,13 +565,15 @@ export async function SendCancelMessageAll(Details: AppointmentDetailsType) {
       1: patient.name,
       2: formatedDate,
       3: formattedTime,
+      4: Details.doctor.whatsapp,
+      5: Details.doctor.name,
     };
 
     // Send cancellation message
     const cancelMessageResult = await client.messages.create({
       from: `whatsapp:${whatsappFrom}`,
       to: `whatsapp:+91${patient.phone}`,
-      contentSid: `${doctor.sid_Pcn}`,
+      contentSid: "HXa919af358c8510333f7dc9d6d71890b8",
       contentVariables: JSON.stringify(messageVariables),
     });
 

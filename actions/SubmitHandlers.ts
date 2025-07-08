@@ -44,39 +44,15 @@ export async function SubmitHandlerBMT(data: BMTAppointmentFormData) {
     console.log("dataKey", dateKey);
     console.log("data.date", data.date);
     console.log("data.email", data.email);
-    // Find or create the patient
-    let patient = await findPatientByPhone(data.whatsapp);
-
-    if (patient) {
-      if (
-        patient.name !== data.name ||
-        patient.age !== data.age ||
-        patient.email !== data.email ||
-        patient.sex !== data.gender
-      ) {
-        const UpdatePatient = await prisma.patient.update({
-          where: {
-            phone: patient.phone,
-          },
-          data: {
-            name: data.name,
-            sex: data.gender,
-            age: data.age,
-            email: data.email,
-          },
-        });
-        patient = UpdatePatient;
-      }
-    }
-    if (!patient) {
-      patient = await createPatient({
-        name: data.name,
-        age: data.age,
-        phone: data.whatsapp,
-        email: data.email,
-        sex: data.gender,
-      });
-    }
+    // Create or find patient using the new unique constraint
+    const patient = await createPatient({
+      name: data.name,
+      age: data.age,
+      phone: data.whatsapp,
+      email: data.email,
+      sex: data.gender,
+      relationship: "myself", // Default to booking for self since booking type step is removed
+    });
 
     // Find the selected service
     const service = doctor?.services?.find((s) => s.name === data.service);
@@ -105,6 +81,9 @@ export async function SubmitHandlerBMT(data: BMTAppointmentFormData) {
       serviceId: service.id,
       doctorId: doctor.id,
       patientId: patient.id,
+      appointmentType: "initial", // Default for BMT
+      bookingType: "myself", // Default to booking for self since booking type step is removed
+      relationship: "myself", // Default to booking for self since booking type step is removed
     });
 
     console.log("appointment", appointment);
@@ -166,31 +145,14 @@ export async function SubmitHandlerArunaEnt(data: DrArunaEntFormProps) {
 
     console.log("dataKey", dateKey);
     console.log("data.date", data.date);
-    // Find or create the patient
-    let patient = await findPatientByPhone(data.whatsapp);
-
-    if (patient) {
-      if (patient.name !== data.name || patient.age !== data.age) {
-        const UpdatePatient = await prisma.patient.update({
-          where: {
-            phone: patient.phone,
-          },
-          data: {
-            name: data.name,
-            age: data.age,
-          },
-        });
-        patient = UpdatePatient;
-      }
-    }
-    if (!patient) {
-      patient = await createPatient({
-        name: data.name,
-        age: data.age,
-        phone: data.whatsapp,
-        email: null,
-      });
-    }
+    // Create or find patient using the new unique constraint
+    const patient = await createPatient({
+      name: data.name,
+      age: data.age,
+      phone: data.whatsapp,
+      email: null,
+      relationship: "myself", // Aruna ENT form defaults to booking for self
+    });
 
     // Create a timeslot
     const timeSlot = await CreateTimeSlot({
@@ -211,6 +173,9 @@ export async function SubmitHandlerArunaEnt(data: DrArunaEntFormProps) {
       timeslotId: timeSlot.id,
       doctorId: doctor.id,
       patientId: patient.id,
+      appointmentType: "initial", // Default for Aruna ENT
+      bookingType: "myself", // Default for Aruna ENT form
+      relationship: "myself", // Default for Aruna ENT form
     });
 
     console.log("appointment", appointment);
@@ -253,6 +218,8 @@ export async function SubmitHandlerAll(
       );
     }
 
+    console.log(data);
+
     console.log("data", data);
 
     const appointmentDate = new Date(data.date);
@@ -275,11 +242,16 @@ export async function SubmitHandlerAll(
     console.log("dataKey", dateKey);
     console.log("data.date", data.date);
     console.log("doctorId", doctorId);
+    console.log("data.bookingType", data.bookingType);
+    console.log("data.relationship", data.relationship);
     const patient = await createPatient({
       name: data.name,
       age: data.age,
       phone: data.whatsapp,
       email: null,
+      sex: data.gender,
+      relationship:
+        data.bookingType === "others" ? data.relationship : "myself",
     });
     const doctor = await findDoctorById(doctorId);
     if (!doctor) {
@@ -302,6 +274,11 @@ export async function SubmitHandlerAll(
       doctorId: doctor.id,
       reason: data.reason,
       patientId: patient.id,
+      appointmentType: data.appointmentType,
+      customAppointmentType: data.customAppointmentType,
+      bookingType: data.bookingType,
+      relationship:
+        data.bookingType === "others" ? data.relationship : "myself",
     });
 
     // Get the complete appointment with relations
