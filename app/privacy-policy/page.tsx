@@ -204,10 +204,10 @@ const PrivacyPolicyPage = () => {
               <p className="text-gray-700 mb-4">
                 To exercise your rights, please contact us at{" "}
                 <a
-                  href="mailto:privacy@techdr.in"
+                  href="mailto:contact@techdr.in"
                   className="text-blue-600 hover:text-blue-800"
                 >
-                  privacy@techdr.in
+                  contact@techdr.in
                 </a>
                 .
               </p>

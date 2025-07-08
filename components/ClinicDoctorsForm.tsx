@@ -25,36 +25,67 @@ import Image from "next/image";
 import { SubmitHandlerAll } from "@/actions/SubmitHandlers";
 
 // Schema definition
-const AppointmentSchema = z.object({
-  bookingType: z.enum(["myself", "others"], {
-    required_error: "Please select who this appointment is for",
-  }),
-  relationship: z.string().optional(),
-  doctorId: z.number({
-    required_error: "Please select a doctor",
-  }),
-  name: z.string().min(2, { message: "Name must be at least 2 characters" }),
-  age: z
-    .string()
-    .refine((val) => !isNaN(parseInt(val)), { message: "Age must be a number" })
-    .refine((val) => parseInt(val) > 0 && parseInt(val) < 120, {
-      message: "Age must be between 1 and 120",
+const AppointmentSchema = z
+  .object({
+    bookingType: z.enum(["myself", "others"], {
+      required_error: "Please select who this appointment is for",
     }),
-  whatsapp: z
-    .string()
-    .regex(/^\d+$/, { message: "WhatsApp number must be numeric" })
-    .min(10, { message: "Check the number" }),
-  date: z.date({ required_error: "Please select a date" }),
-  time: z.string({ required_error: "Please select a time slot" }),
-  reason: z.string().optional(),
-});
+    relationship: z.string().optional(),
+    appointmentType: z.enum(
+      ["initial", "followup", "secondopinion", "others"],
+      {
+        required_error: "Please select the type of appointment",
+      }
+    ),
+    customAppointmentType: z.string().optional(),
+    doctorId: z.number({
+      required_error: "Please select a doctor",
+    }),
+    name: z.string().min(2, { message: "Name must be at least 2 characters" }),
+    gender: z.enum(["male", "female", "other"], {
+      required_error: "Please select gender",
+    }),
+    age: z
+      .string()
+      .refine((val) => !isNaN(parseInt(val)), {
+        message: "Age must be a number",
+      })
+      .refine((val) => parseInt(val) > 0 && parseInt(val) < 120, {
+        message: "Age must be between 1 and 120",
+      }),
+    whatsapp: z
+      .string()
+      .regex(/^\d+$/, { message: "WhatsApp number must be numeric" })
+      .min(10, { message: "Check the number" }),
+    date: z.date({ required_error: "Please select a date" }),
+    time: z.string({ required_error: "Please select a time slot" }),
+    reason: z.string().optional(),
+  })
+  .refine(
+    (data) => {
+      if (data.appointmentType === "others") {
+        return (
+          data.customAppointmentType &&
+          data.customAppointmentType.trim().length > 0
+        );
+      }
+      return true;
+    },
+    {
+      message: "Please specify the appointment type",
+      path: ["customAppointmentType"],
+    }
+  );
 
 // Interfaces
 interface ClinicAppointmentFormData {
   bookingType: "myself" | "others";
   relationship?: string;
+  appointmentType: "initial" | "followup" | "secondopinion" | "others";
+  customAppointmentType?: string;
   doctorId: number;
   name: string;
+  gender: "male" | "female" | "other";
   age: string;
   whatsapp: string;
   date: Date | null;
@@ -266,10 +297,11 @@ const ClinicDrForms = ({ clinicId }: { clinicId: number }) => {
   // Define steps
   const steps = [
     { id: 1, title: "Booking Type", description: "Who is this for?" },
-    { id: 2, title: "Doctor Selection", description: "Choose your doctor" },
-    { id: 3, title: "Personal Details", description: "Patient information" },
-    { id: 4, title: "Appointment", description: "Date & time selection" },
-    { id: 5, title: "Confirmation", description: "Review & submit" },
+    { id: 2, title: "Appointment Type", description: "Type of consultation" },
+    { id: 3, title: "Doctor Selection", description: "Choose your doctor" },
+    { id: 4, title: "Personal Details", description: "Patient information" },
+    { id: 5, title: "Appointment", description: "Date & time selection" },
+    { id: 6, title: "Confirmation", description: "Review & submit" },
   ];
 
   const totalSteps = steps.length;
@@ -286,8 +318,11 @@ const ClinicDrForms = ({ clinicId }: { clinicId: number }) => {
     defaultValues: {
       bookingType: "myself",
       relationship: "",
+      appointmentType: "initial",
+      customAppointmentType: "",
       doctorId: 0,
       name: "",
+      gender: "male",
       age: "",
       whatsapp: "",
       date: null,
@@ -300,6 +335,8 @@ const ClinicDrForms = ({ clinicId }: { clinicId: number }) => {
   const watchTime = watch("time");
   const selectedDoctorId = watch("doctorId");
   const watchBookingType = watch("bookingType");
+  const watchAppointmentType = watch("appointmentType");
+  const watchGender = watch("gender");
 
   const bookingOptions = [
     {
