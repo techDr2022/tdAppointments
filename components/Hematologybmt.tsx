@@ -152,11 +152,11 @@ const Hematologybmt = ({ blockedSlots = [] }: HematologybmtProps = {}) => {
   const locationOptions = [
     {
       name: "Financial District",
-      hours: "10:00 am to 4:00 pm",
+      hours: "10:00 am to 3:00 pm",
     },
     {
       name: "Kukatpally",
-      hours: "6:00 pm to 8:30 pm",
+      hours: "6:00 pm to 8:00 pm",
     },
   ];
 
