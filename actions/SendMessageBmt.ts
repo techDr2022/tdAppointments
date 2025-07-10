@@ -481,7 +481,7 @@ export async function SendRescheduleMessageBMT({
           id: updatetimeSlot.id,
         },
         data: {
-          isAvailable: false,
+          isAvailable: true,
         },
       });
     } catch (error) {

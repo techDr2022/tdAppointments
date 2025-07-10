@@ -134,6 +134,7 @@ const Hematologybmt = ({ blockedSlots = [] }: HematologybmtProps = {}) => {
   const [showTimeSlots, setShowTimeSlots] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
   const POLL_INTERVAL = 3000; // 3 seconds
+  const [showAllBookedModal, setShowAllBookedModal] = useState(false);
 
   // Define steps
   const steps = [
@@ -161,12 +162,6 @@ const Hematologybmt = ({ blockedSlots = [] }: HematologybmtProps = {}) => {
 
   const locationTimeSlots: { [key: string]: string[] } = {
     "Financial District": [
-      "10:00",
-      "10:20",
-      "10:40",
-      "11:00",
-      "11:20",
-      "11:40",
       "12:00",
       "12:20",
       "12:40",
@@ -175,9 +170,8 @@ const Hematologybmt = ({ blockedSlots = [] }: HematologybmtProps = {}) => {
       "14:40",
       "15:00",
       "15:20",
-      "15:40",
     ],
-    Kukatpally: ["18:00", "18:20", "18:40", "19:20", "19:40", "20:00", "20:20"],
+    Kukatpally: ["18:00", "18:20", "18:40", "19:00", "19:20", "19:40", "20:00"],
   };
 
   const {
@@ -350,44 +344,44 @@ const Hematologybmt = ({ blockedSlots = [] }: HematologybmtProps = {}) => {
   // Dynamic time slots based on location
 
   const Services = [
-    "Other",
-    "Immunotherapy",
-    "CAR T- Cells",
-    "Half Matched Transplant BMT",
-    "Allogeneic BMT",
-    "Unrelated BMT",
-    "Autologous BMT",
-    "Erdheim Chester Disease",
-    "VEXAS Syndrome",
-    "Bone Marrow Examination/Testing",
-    "Porphyrias",
-    "Hemochromatosis",
-    "LCH",
-    "Hemophagocytic Syndrome (HLH)",
-    "Storage Disorders",
-    "Immunodeficiency",
-    "IgG4-RD",
-    "Platelets & WBC",
-    "Unexplained high or low Hb",
     "ALPS",
+    "Allogeneic BMT",
+    "Aplastic Anemia",
+    "Autologous BMT",
+    "Bleeding and Clotting disorders",
+    "Blood Cancer",
+    "Bone Marrow Examination/Testing",
+    "CAR T- Cells",
+    "DVT",
+    "Erdheim Chester Disease",
+    "Half Matched Transplant BMT",
+    "Hemochromatosis",
+    "Hemophagocytic Syndrome (HLH)",
+    "IgG4-RD",
+    "Immunodeficiency",
+    "Immunotherapy",
+    "ITP, TTP, FNAIT, AIHA, PNH",
+    "LCH",
+    "Leukemia",
+    "Lymphoma",
+    "Mastocytosis",
+    "MDS",
+    "MGUS",
     "Multiple Sclerosis",
+    "Myelofibrosis",
+    "Myeloma",
+    "Other",
+    "Pancytopenia",
+    "Platelets & WBC",
+    "Porphyrias",
     "Recurrent Abortions",
     "Recurrent Infections",
-    "Bleeding and Clotting disorders",
-    "DVT",
     "Sickle Cell Anemia",
+    "Storage Disorders",
     "Thalassemia",
-    "ITP, TTP, FNAIT, AIHA, PNH",
-    "Aplastic Anemia",
-    "Pancytopenia",
-    "MGUS",
-    "Mastocytosis",
-    "Myelofibrosis",
-    "Blood Cancer",
-    "MDS",
-    "Myeloma",
-    "Lymphoma",
-    "Leukemia",
+    "Unexplained high or low Hb",
+    "Unrelated BMT",
+    "VEXAS Syndrome",
   ];
 
   const addPendingBooking = (date: Date, time: string) => {
@@ -506,6 +500,24 @@ const Hematologybmt = ({ blockedSlots = [] }: HematologybmtProps = {}) => {
     return generateTimeSlots(watchLocation, watchDate);
   }, [watchLocation, watchDate, blockedSlots]);
 
+  // Check if all slots are unavailable when date or location changes
+  useEffect(() => {
+    if (watchLocation && watchDate) {
+      const allUnavailable = areAllSlotsUnavailable(watchLocation, watchDate);
+      if (allUnavailable && showTimeSlots) {
+        setShowAllBookedModal(true);
+        setShowTimeSlots(false);
+      }
+    }
+  }, [
+    watchLocation,
+    watchDate,
+    bookedAppointments,
+    pendingBookings,
+    blockedSlots,
+    showTimeSlots,
+  ]);
+
   const isSlotBooked = (date: Date, time: string): boolean => {
     if (!date) return false;
     const dateKey = date.toLocaleDateString("en-CA");
@@ -515,6 +527,62 @@ const Hematologybmt = ({ blockedSlots = [] }: HematologybmtProps = {}) => {
       bookedAppointments[dateKey]?.includes(time) ||
         pendingBookings.has(bookingKey)
     );
+  };
+
+  // Check if all slots are unavailable for a given location and date
+  const areAllSlotsUnavailable = (
+    location: string | null,
+    date: Date | null
+  ): boolean => {
+    if (!location || !date || !locationTimeSlots[location]) {
+      return false;
+    }
+
+    const selectedDate = new Date(
+      date.toLocaleString("en-US", { timeZone: "Asia/Kolkata" })
+    );
+
+    const now = new Date();
+    const currentTime = new Date(
+      now.toLocaleString("en-US", { timeZone: "Asia/Kolkata" })
+    );
+
+    let availableSlots = 0;
+
+    // Check each time slot for the location
+    for (const time of locationTimeSlots[location]) {
+      const [hours, minutes] = time.split(":");
+      const slotDate = new Date(selectedDate);
+      slotDate.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+
+      // Skip past time slots for today
+      if (
+        selectedDate.toDateString() === currentTime.toDateString() &&
+        slotDate < currentTime
+      ) {
+        continue;
+      }
+
+      // Check if the time slot falls within any blocked period
+      const isBlocked = blockedSlots.some(({ start, end }) => {
+        const slotTime = new Date(`2000-01-01T${time}`);
+        const blockStart = new Date(`2000-01-01T${start}`);
+        const blockEnd = new Date(`2000-01-01T${end}`);
+        return slotTime >= blockStart && slotTime < blockEnd;
+      });
+
+      // Skip blocked time slots
+      if (isBlocked) {
+        continue;
+      }
+
+      // Check if slot is booked
+      if (!isSlotBooked(date, time)) {
+        availableSlots++;
+      }
+    }
+
+    return availableSlots === 0;
   };
 
   // Calendar generation function
@@ -997,6 +1065,172 @@ const Hematologybmt = ({ blockedSlots = [] }: HematologybmtProps = {}) => {
         </div>
       )}
 
+      {/* All Booked Modal - Compact Mobile Friendly */}
+      {showAllBookedModal && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-end sm:items-center justify-center transition-all"
+          onTouchStart={(e) => {
+            const touch = e.touches[0];
+            e.currentTarget.setAttribute(
+              "data-start-x",
+              touch.clientX.toString()
+            );
+          }}
+          onTouchMove={(e) => {
+            const startX = parseFloat(
+              e.currentTarget.getAttribute("data-start-x") || "0"
+            );
+            const currentX = e.touches[0].clientX;
+            const diff = currentX - startX;
+
+            // Prevent default behavior on significant horizontal swipe
+            if (Math.abs(diff) > 50) {
+              e.preventDefault();
+            }
+          }}
+          onTouchEnd={(e) => {
+            const startX = parseFloat(
+              e.currentTarget.getAttribute("data-start-x") || "0"
+            );
+            const endX = e.changedTouches[0].clientX;
+            const diff = endX - startX;
+
+            // Close modal on swipe right (positive X direction)
+            if (diff > 100) {
+              setShowAllBookedModal(false);
+            }
+          }}
+        >
+          <div className="w-full sm:max-w-sm mx-0 sm:mx-4 bg-white rounded-t-2xl sm:rounded-2xl p-3 sm:p-4 shadow-2xl">
+            {/* Mobile handle bar - Swipe Right Indicator */}
+            <div className="block sm:hidden flex items-center justify-center mx-auto mb-2 space-x-1">
+              <div className="w-2 h-1 bg-gray-300 rounded-full"></div>
+              <div className="w-3 h-1 bg-gray-400 rounded-full"></div>
+              <div className="w-4 h-1 bg-gray-500 rounded-full"></div>
+              <span className="text-gray-400 text-xs ml-1">→</span>
+            </div>
+
+            <div className="text-center space-y-2 sm:space-y-3">
+              {/* Sad emoji with animation */}
+              <div className="mx-auto w-12 h-12 sm:w-16 sm:h-16 bg-red-100 rounded-full flex items-center justify-center">
+                <span className="text-2xl sm:text-3xl animate-pulse">😔</span>
+              </div>
+
+              {/* Title */}
+              <h3 className="text-base sm:text-lg font-bold text-red-800">
+                All Appointments Booked
+              </h3>
+
+              {/* Message */}
+              <div className="space-y-2 px-1">
+                <p className="text-xs sm:text-sm text-gray-700 leading-tight">
+                  Sorry, all appointments are booked for{" "}
+                  <span className="font-semibold text-blue-600">
+                    {watchLocation}
+                  </span>{" "}
+                  on{" "}
+                  <span className="font-semibold text-blue-600">
+                    {watchDate ? formatDate(watchDate) : "selected date"}
+                  </span>
+                </p>
+
+                <div className="bg-orange-50 border border-orange-200 rounded-lg p-2">
+                  <div className="flex items-center space-x-2">
+                    <span className="text-orange-600 text-base flex-shrink-0">
+                      🚨
+                    </span>
+                    <div className="flex-1">
+                      <p className="text-xs font-semibold text-orange-800">
+                        For Emergency Cases - Connect with us directly
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Action Buttons - Compact */}
+              <div className="flex flex-col space-y-2 pt-1">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowAllBookedModal(false);
+                    setShowCalendar(true);
+                  }}
+                  className="w-full bg-blue-600 text-white px-3 py-2.5 rounded-lg hover:bg-blue-700 active:bg-blue-800 transition-colors font-medium text-xs sm:text-sm touch-manipulation"
+                >
+                  📅 Select Different Date
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowAllBookedModal(false);
+                    setCurrentStep(1);
+                    setValue("location", "");
+                    setValue("date", null);
+                    setValue("time", "");
+                  }}
+                  className="w-full bg-green-600 text-white px-3 py-2.5 rounded-lg hover:bg-green-700 active:bg-green-800 transition-colors font-medium text-xs sm:text-sm touch-manipulation"
+                >
+                  📍 Try Different Location
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setShowAllBookedModal(false)}
+                  className="w-full bg-gray-200 text-gray-700 px-3 py-2.5 rounded-lg hover:bg-gray-300 active:bg-gray-400 transition-colors font-medium text-xs sm:text-sm touch-manipulation"
+                >
+                  ✕ Close
+                </button>
+              </div>
+
+              {/* Emergency Contact Info - Compact */}
+              <div className="bg-gray-50 rounded-lg p-2 text-left">
+                <h4 className="font-semibold text-gray-800 text-xs sm:text-sm mb-2 text-center">
+                  📞 Emergency Contact
+                </h4>
+                <div className="space-y-1.5">
+                  {/* Phone */}
+                  <div className="flex items-center justify-between bg-white rounded p-2 border border-gray-200">
+                    <div className="flex items-center space-x-1.5">
+                      <span className="text-blue-500 text-sm">📞</span>
+                      <span className="text-xs text-gray-600">Phone:</span>
+                    </div>
+                    <a
+                      href="tel:+917780297660"
+                      className="font-semibold text-blue-600 text-xs hover:underline active:text-blue-800 touch-manipulation"
+                    >
+                      +91 7780297660
+                    </a>
+                  </div>
+
+                  {/* WhatsApp */}
+                  <div className="flex items-center justify-between bg-white rounded p-2 border border-gray-200">
+                    <div className="flex items-center space-x-1.5">
+                      <span className="text-green-500 text-sm">💬</span>
+                      <span className="text-xs text-gray-600">WhatsApp:</span>
+                    </div>
+                    <a
+                      href="https://wa.me/7780297660"
+                      className="font-semibold text-green-600 text-xs hover:underline active:text-green-800 touch-manipulation"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      +91 7780297660
+                    </a>
+                  </div>
+                </div>
+              </div>
+
+              {/* Mobile close instruction */}
+              <div className="block sm:hidden text-center">
+                <p className="text-xs text-gray-400">Swipe right to close →</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Main Content Container */}
       <div className="min-h-screen flex items-center justify-center p-2 sm:p-4">
         <div className="bg-white shadow-2xl rounded-2xl p-4 sm:p-6 max-w-md w-full mx-auto">
@@ -1346,8 +1580,16 @@ const Hematologybmt = ({ blockedSlots = [] }: HematologybmtProps = {}) => {
                     type="button"
                     onClick={() => {
                       if (watchDate) {
-                        setShowTimeSlots(true);
-                        setShowCalendar(false);
+                        const allUnavailable = areAllSlotsUnavailable(
+                          watchLocation,
+                          watchDate
+                        );
+                        if (allUnavailable) {
+                          setShowAllBookedModal(true);
+                        } else {
+                          setShowTimeSlots(true);
+                          setShowCalendar(false);
+                        }
                       } else {
                         setShowCalendar(true);
                         toast.info("Please select a date first");
