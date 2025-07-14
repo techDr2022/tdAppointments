@@ -18,6 +18,7 @@ export async function sendFeedbackMessageAll(Details: AppointmentDetailsType) {
     const messageVariables = {
       1: Details.patient.name,
       2: Details.doctor.feedback_link,
+      3: Details.doctor.image_slug || "N/A",
     };
     await client.messages.create({
       from: `whatsapp:${whatsappFrom}`,
@@ -53,6 +54,7 @@ export async function sendReminderMessageAll(Details: AppointmentDetailsType) {
       2: patient.name,
       3: date[0],
       4: formattedTime,
+      5: Details.doctor.image_slug || "N/A",
     };
     await client.messages.create({
       from: `whatsapp:${whatsappFrom}`,

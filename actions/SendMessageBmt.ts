@@ -793,9 +793,8 @@ export async function SendRescheduleMessageAll({
       4: date[0],
       5: formattedTime,
       6: Details.doctor.whatsapp,
+      7: Details.doctor.image_slug || "N/A",
     };
-
-    console.log("Message Variables:", messageVariables);
 
     try {
       await client.messages.create({

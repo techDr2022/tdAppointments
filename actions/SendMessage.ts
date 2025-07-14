@@ -453,6 +453,7 @@ export async function SendConfirmMessageAll(Details: AppointmentDetailsType) {
         6: Details.doctor.map_location || "N/A",
         7: Details.doctor.website,
         8: Details.doctor.whatsapp,
+        9: Details.doctor.image_slug || "N/A",
       };
     }
 
@@ -567,6 +568,7 @@ export async function SendCancelMessageAll(Details: AppointmentDetailsType) {
       3: formattedTime,
       4: Details.doctor.whatsapp,
       5: Details.doctor.name,
+      6: Details.doctor.image_slug || "N/A",
     };
 
     // Send cancellation message

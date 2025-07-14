@@ -7,9 +7,7 @@ import { createPatient, findPatientByPhone } from "./patient";
 import { findDoctorById } from "./Doctor";
 import { sendConfirmMessage, sendMessage } from "./SendMessage";
 import { AllAppointmentFormData } from "@/components/DrForms";
-import prisma from "@/lib/db";
 import { DrArunaEntFormProps } from "@/components/DrArunaEntForm";
-import { DoctorType } from "@/types/model";
 
 export async function SubmitHandlerBMT(data: BMTAppointmentFormData) {
   try {
