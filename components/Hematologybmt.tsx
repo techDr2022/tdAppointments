@@ -143,7 +143,7 @@ const Hematologybmt = ({ blockedSlots = [] }: HematologybmtProps = {}) => {
     { id: 3, title: "Personal Details", description: "Patient information" },
     { id: 4, title: "Appointment", description: "Date & time selection" },
     { id: 5, title: "Confirmation", description: "Review & submit" },
-    { id: 6, title: "Success", description: "Appointment confirmed" },
+    { id: 6, title: "Success", description: "Appointment Received" },
   ];
 
   const totalSteps = steps.length;
@@ -1769,7 +1769,7 @@ const Hematologybmt = ({ blockedSlots = [] }: HematologybmtProps = {}) => {
                     Sending WhatsApp Message
                   </h3>
                   <p className="text-sm text-gray-600 mb-4">
-                    Please wait while we send your appointment confirmation...
+                    Please wait while we send your appointment details...
                   </p>
 
                   {/* Animated dots */}
