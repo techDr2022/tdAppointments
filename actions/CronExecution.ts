@@ -104,8 +104,15 @@ export async function cronJobAction(
           delay: reminderDelay, // Delay in milliseconds
         }
       );
-      await prisma.appointmentJobs.create({
-        data: {
+      await prisma.appointmentJobs.upsert({
+        where: {
+          appointmentId: Details.id,
+        },
+        update: {
+          feedbackJobId: feedbackJob.id,
+          reminderJobId: reminderJob.id,
+        },
+        create: {
           feedbackJobId: feedbackJob.id,
           appointmentId: Details.id,
           reminderJobId: reminderJob.id,
@@ -115,8 +122,15 @@ export async function cronJobAction(
       console.log("Reminder job has been scheduled:", reminderJob.id);
     } else {
       console.log("Reminder time has already passed; job not scheduled.");
-      await prisma.appointmentJobs.create({
-        data: {
+      await prisma.appointmentJobs.upsert({
+        where: {
+          appointmentId: Details.id,
+        },
+        update: {
+          feedbackJobId: feedbackJob.id,
+          reminderJobId: null, // Clear reminder job since it's not needed
+        },
+        create: {
           feedbackJobId: feedbackJob.id,
           appointmentId: Details.id,
         },

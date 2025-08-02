@@ -338,14 +338,12 @@ export async function sendMessage_acknow_confirm(
           }),
         ]);
 
-        console.log(
-          "Doctor message sent successfully:",
-          doctorMessageResult.sid
-        );
-        console.log(
-          "Patient message sent successfully:",
-          patientMessageResult.sid
-        );
+        console.log("Doctor message sent successfully:", doctorMessageResult);
+        console.log("Patient message sent successfully:", patientMessageResult);
+        const latest = await client
+          .messages("MM80c529ae3317c5dbf8637c103800d34f")
+          .fetch();
+        console.log(latest);
       } catch (messageError) {
         console.error("Error sending messages:", messageError);
         throw messageError;

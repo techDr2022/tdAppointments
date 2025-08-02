@@ -481,8 +481,12 @@ export async function SendRescheduleMessageBMT({
           id: updatetimeSlot.id,
         },
         data: {
-          isAvailable: true,
+          isAvailable: false,
         },
+      });
+      await prisma.timeslot.update({
+        where: { id: Details.timeslot.id }, // OLD timeslot
+        data: { isAvailable: true }, // Make it available again
       });
     } catch (error) {
       if (error instanceof Error) {
@@ -521,9 +525,12 @@ export async function SendRescheduleMessageBMT({
         contentSid: "HX8f163931fcc2c5f89be448dc02785db2",
         contentVariables: JSON.stringify(messageVariables),
       });
-
-      await cronJobAction(Details);
-      return true;
+      const UpdatedDetails = await appointmentDetails(appointmentId); // NEW data
+      if (UpdatedDetails) {
+        await cronJobAction(UpdatedDetails);
+        return true;
+      }
+      return false;
     } catch (error) {
       if (error instanceof Error) {
         throw new Error("Failed to send WhatsApp message. " + error.message);
@@ -627,6 +634,10 @@ export async function SendRescheduleMessageRagas({
           isAvailable: false,
         },
       });
+      await prisma.timeslot.update({
+        where: { id: Details.timeslot.id }, // OLD timeslot
+        data: { isAvailable: true }, // Make it available again
+      });
     } catch (error) {
       if (error instanceof Error) {
         throw new Error(
@@ -662,9 +673,12 @@ export async function SendRescheduleMessageRagas({
         contentSid: `${Details.doctor.sid_resch}`,
         contentVariables: JSON.stringify(messageVariables),
       });
-
-      await cronJobAction(Details);
-      return true;
+      const UpdatedDetails = await appointmentDetails(appointmentId); // NEW data
+      if (UpdatedDetails) {
+        await cronJobAction(UpdatedDetails);
+        return true;
+      }
+      return false;
     } catch (error) {
       if (error instanceof Error) {
         throw new Error("Failed to send WhatsApp message. " + error.message);
@@ -740,6 +754,7 @@ export async function SendRescheduleMessageAll({
     const newDate = new Date(dateKey);
 
     try {
+      const cancelAppointJobs = await cancelAppointmentJobs(Details.id);
       await prisma.appointment.update({
         where: {
           id: appointmentId,
@@ -750,7 +765,7 @@ export async function SendRescheduleMessageAll({
           timeslotId: updatetimeSlot.id,
         },
       });
-      const cancelAppointJobs = await cancelAppointmentJobs(Details.id);
+
       console.log("cancelledAppointJobs", cancelAppointJobs.message);
     } catch (error) {
       if (error instanceof Error) {
@@ -767,6 +782,10 @@ export async function SendRescheduleMessageAll({
         data: {
           isAvailable: false,
         },
+      });
+      await prisma.timeslot.update({
+        where: { id: Details.timeslot.id }, // OLD timeslot
+        data: { isAvailable: true }, // Make it available again
       });
     } catch (error) {
       if (error instanceof Error) {
@@ -803,9 +822,12 @@ export async function SendRescheduleMessageAll({
         contentSid: "HX4781dfbc449a478652d4be67297f38c5",
         contentVariables: JSON.stringify(messageVariables),
       });
-
-      await cronJobAction(Details);
-      return true;
+      const UpdatedDetails = await appointmentDetails(appointmentId); // NEW data
+      if (UpdatedDetails) {
+        await cronJobAction(UpdatedDetails);
+        return true;
+      }
+      return false;
     } catch (error) {
       if (error instanceof Error) {
         throw new Error("Failed to send WhatsApp message. " + error.message);
