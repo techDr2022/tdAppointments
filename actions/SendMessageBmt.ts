@@ -155,11 +155,23 @@ export async function SendConfirmMessageBMT(Details: AppointmentDetailsType) {
         : `+91${patient.phone}`;
 
       // Send confirmation message
-      await client.messages.create({
+      const confirmMessageResult = await client.messages.create({
         from: `whatsapp:${whatsappFrom}`,
         to: `whatsapp:${patientPhone}`,
         contentSid: "HX81c6da0e00e69ef5e622b92a413001d4",
         contentVariables: JSON.stringify(messageVariables),
+        statusCallback: `${process.env.BASE_URL}/api/delivery-webhook`,
+      });
+
+      // Log the confirmation message
+      await prisma.messageLog.create({
+        data: {
+          messageSid: confirmMessageResult.sid,
+          appointmentId: Details.id,
+          patientId: patient.id,
+          messageType: "confirmation",
+          status: "queued",
+        },
       });
 
       const ConfirmationProps = {
@@ -251,9 +263,21 @@ export async function SendCancelMessageBMT(Details: AppointmentDetailsType) {
       to: `whatsapp:${patientPhone}`,
       contentSid: "HXb8d0fe79bd7785dd5e0d44949be1cb80",
       contentVariables: JSON.stringify(messageVariables),
+      statusCallback: `${process.env.BASE_URL}/api/delivery-webhook`,
     });
 
     console.log("Cancellation message send result:", cancelMessageResult);
+
+    // Log the cancellation message
+    await prisma.messageLog.create({
+      data: {
+        messageSid: cancelMessageResult.sid,
+        appointmentId: Details.id,
+        patientId: patient.id,
+        messageType: "cancellation",
+        status: "queued",
+      },
+    });
 
     const CancellationProps = {
       PatientName: patient.name,
@@ -519,11 +543,23 @@ export async function SendRescheduleMessageBMT({
       ? Details.patient.phone
       : `+91${Details.patient.phone}`;
     try {
-      await client.messages.create({
+      const rescheduleMessageResult = await client.messages.create({
         from: `whatsapp:${whatsappFrom}`,
         to: `whatsapp:${patientPhone}`,
         contentSid: "HX8f163931fcc2c5f89be448dc02785db2",
         contentVariables: JSON.stringify(messageVariables),
+        statusCallback: `${process.env.BASE_URL}/api/delivery-webhook`,
+      });
+
+      // Log the reschedule message
+      await prisma.messageLog.create({
+        data: {
+          messageSid: rescheduleMessageResult.sid,
+          appointmentId: Details.id,
+          patientId: Details.patient.id,
+          messageType: "reschedule",
+          status: "queued",
+        },
       });
       const UpdatedDetails = await appointmentDetails(appointmentId); // NEW data
       if (UpdatedDetails) {
@@ -667,11 +703,23 @@ export async function SendRescheduleMessageRagas({
     console.log("Message Variables:", messageVariables);
 
     try {
-      await client.messages.create({
+      const rescheduleRagasResult = await client.messages.create({
         from: `whatsapp:${whatsappFrom}`,
         to: `whatsapp:+91${Details.patient.phone}`,
         contentSid: `${Details.doctor.sid_resch}`,
         contentVariables: JSON.stringify(messageVariables),
+        statusCallback: `${process.env.BASE_URL}/api/delivery-webhook`,
+      });
+
+      // Log the reschedule message
+      await prisma.messageLog.create({
+        data: {
+          messageSid: rescheduleRagasResult.sid,
+          appointmentId: Details.id,
+          patientId: Details.patient.id,
+          messageType: "reschedule",
+          status: "queued",
+        },
       });
       const UpdatedDetails = await appointmentDetails(appointmentId); // NEW data
       if (UpdatedDetails) {
@@ -816,11 +864,23 @@ export async function SendRescheduleMessageAll({
     };
 
     try {
-      await client.messages.create({
+      const rescheduleAllResult = await client.messages.create({
         from: `whatsapp:${whatsappFrom}`,
         to: `whatsapp:+91${Details.patient.phone}`,
         contentSid: "HX4781dfbc449a478652d4be67297f38c5",
         contentVariables: JSON.stringify(messageVariables),
+        statusCallback: `${process.env.BASE_URL}/api/delivery-webhook`,
+      });
+
+      // Log the reschedule message
+      await prisma.messageLog.create({
+        data: {
+          messageSid: rescheduleAllResult.sid,
+          appointmentId: Details.id,
+          patientId: Details.patient.id,
+          messageType: "reschedule",
+          status: "queued",
+        },
       });
       const UpdatedDetails = await appointmentDetails(appointmentId); // NEW data
       if (UpdatedDetails) {

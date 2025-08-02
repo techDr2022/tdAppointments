@@ -340,10 +340,6 @@ export async function sendMessage_acknow_confirm(
 
         console.log("Doctor message sent successfully:", doctorMessageResult);
         console.log("Patient message sent successfully:", patientMessageResult);
-        const latest = await client
-          .messages("MM80c529ae3317c5dbf8637c103800d34f")
-          .fetch();
-        console.log(latest);
       } catch (messageError) {
         console.error("Error sending messages:", messageError);
         throw messageError;
@@ -471,19 +467,42 @@ export async function SendConfirmMessageAll(Details: AppointmentDetailsType) {
         3: `${formattedTime}`,
         4: Details.doctor.name,
       };
-      await client.messages.create({
+      const manualConfirmResult = await client.messages.create({
         from: `whatsapp:${whatsappFrom}`,
         to: `whatsapp:+91${patient.phone}`,
         contentSid: "HX96e17d4ab1a20f14826f09883e8a7520",
         contentVariables: JSON.stringify(messageVariables),
+        statusCallback: `${process.env.BASE_URL}/api/delivery-webhook`,
+      });
+
+      // Log the manual confirmation message
+      await prisma.messageLog.create({
+        data: {
+          messageSid: manualConfirmResult.sid,
+          appointmentId: Details.id,
+          patientId: patient.id,
+          messageType: "confirmation",
+          status: "queued",
+        },
       });
     } else {
       //single location
-      await client.messages.create({
+      const messageResult = await client.messages.create({
         from: `whatsapp:${whatsappFrom}`,
         to: `whatsapp:+91${patient.phone}`,
         contentSid: "HX6b5f279ff7bd065b59c53d8f11f2a45e",
         contentVariables: JSON.stringify(messageVariables),
+        statusCallback: `${process.env.BASE_URL}/api/delivery-webhook`,
+      });
+
+      await prisma.messageLog.create({
+        data: {
+          messageSid: messageResult.sid,
+          appointmentId: Details.id,
+          patientId: patient.id,
+          messageType: "confirmation",
+          status: "queued",
+        },
       });
     }
 
@@ -575,9 +594,21 @@ export async function SendCancelMessageAll(Details: AppointmentDetailsType) {
       to: `whatsapp:+91${patient.phone}`,
       contentSid: "HXa919af358c8510333f7dc9d6d71890b8",
       contentVariables: JSON.stringify(messageVariables),
+      statusCallback: `${process.env.BASE_URL}/api/delivery-webhook`,
     });
 
     console.log("Cancellation message send result:", cancelMessageResult);
+
+    // Log the cancellation message
+    await prisma.messageLog.create({
+      data: {
+        messageSid: cancelMessageResult.sid,
+        appointmentId: Details.id,
+        patientId: patient.id,
+        messageType: "cancellation",
+        status: "queued",
+      },
+    });
 
     // Update appointment status
     const updateResult = await prisma.appointment.update({

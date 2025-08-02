@@ -71,6 +71,7 @@ model Patient {
   relationship String?       // Relationship when booking for others (e.g., Father, Mother, Friend)
   appointments Appointment[]
   ehrRecords   EhrRecord[]
+  messageLogs  MessageLog[]
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
 
@@ -97,6 +98,7 @@ model Appointment {
   service                Service?         @relation(fields: [serviceId], references: [id], onDelete: Cascade)
   timeslot               Timeslot         @relation(fields: [timeslotId], references: [id])
   appointmentJob         AppointmentJobs?
+  messageLogs            MessageLog[]
   createdAt              DateTime         @default(now())
   updatedAt              DateTime         @updatedAt
 }
@@ -152,4 +154,18 @@ model EhrRecord {
   
   createdAt        DateTime    @default(now())
   updatedAt        DateTime    @updatedAt
+}
+
+model MessageLog {
+  id            Int      @id @default(autoincrement())
+  messageSid    String   @unique  // From Twilio response
+  appointmentId Int
+  patientId     Int  
+  messageType   String   // 'confirmation', 'cancellation', 'Reschedule'
+  status        String   // 'sent', 'delivered', 'read', 'failed'
+  sentAt        DateTime @default(now())
+  deliveredAt   DateTime?
+  
+  appointment   Appointment @relation(fields: [appointmentId], references: [id])
+  patient       Patient     @relation(fields: [patientId], references: [id])
 }
