@@ -597,6 +597,11 @@ export async function SendCancelMessageAll(Details: AppointmentDetailsType) {
       statusCallback: `${process.env.BASE_URL}/api/delivery-webhook`,
     });
 
+    console.log(
+      "statusCallback",
+      `${process.env.BASE_URL}/api/delivery-webhook`
+    );
+
     console.log("Cancellation message send result:", cancelMessageResult);
 
     // Log the cancellation message
