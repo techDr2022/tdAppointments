@@ -16,9 +16,10 @@ const client = twilio(accountSid, authToken);
 export async function sendFeedbackMessageAll(Details: AppointmentDetailsType) {
   try {
     const messageVariables = {
-      1: Details.patient.name,
-      2: Details.doctor.feedback_link,
-      3: Details.doctor.image_slug || "N/A",
+      1: Details.doctor.name,
+      2: Details.patient.name,
+      3: Details.doctor.feedback_link,
+      4: Details.doctor.image_slug || "N/A",
     };
     await client.messages.create({
       from: `whatsapp:${whatsappFrom}`,
